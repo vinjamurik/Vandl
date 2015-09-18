@@ -1,7 +1,6 @@
 angular.module('elastableau',[]).factory('elastic',function($http){
 	var factory = {};
-
-	factory.index = '';
+    factory.index = '';
     factory.indices = [];
     factory.type = '';
     factory.types = {};
