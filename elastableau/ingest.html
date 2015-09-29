@@ -1,7 +1,7 @@
 <input class='form-control primary-text-box' type='text' ng-model='hdfs.path' ng-change='hdfs.on.pathChange()' placeholder='HDFS directory'>
 <button class="btn" ngf-select ng-model="hdfs.uploadFiles" ngf-multiple="true" ngf-change='hdfs.on.fileChange()' ngf-allow-dir='false'>Select Files</button>
 <button class="btn btn-primary" ng-click='hdfs.submit()' ng-disabled='!hdfs.uploadFiles.length'>Submit</button>
-<a href='#/home'>Home</a>
+
 <div class='col-md-6'>
 	<h3 class='text-center'>Files in directory</h3>
 	<ul class='list-group'>
@@ -19,6 +19,7 @@
 		</li>
 	</ul>
 </div>
+
 <div class='col-md-6'>
 	<h3 class='text-center'>Files to Upload</h3>
 	<ul class='list-group'>

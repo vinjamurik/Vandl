@@ -1,13 +1,6 @@
-angular.module('elastableau',['ngRoute','ngFileUpload']).config(function($routeProvider){  
-  $routeProvider.when('/home',{
-    templateUrl:'home.html'
-  }).when('/extract',{
-    templateUrl:'extract.html',
-    controller:'extract'
-  }).when('/ingest',{
-    templateUrl:'ingest.html',
-    controller:'ingest'
-  }).otherwise('/home');
+angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',function($scope){
+
+  $scope.view = 'extract';
 
 }).factory('elastic',function($http){
 	var factory = {};

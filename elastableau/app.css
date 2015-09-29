@@ -20,3 +20,7 @@
 span[ng-click] {
 	cursor: pointer;
 }
+
+.top-button-bar {
+	margin-bottom: 10px;
+}

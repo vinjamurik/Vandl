@@ -1,6 +1,6 @@
 <div>
   Indices
-  <select class='form-control mid-width' ng-model='elastic.index' ng-options='i as i for i in elastic.indices' ng-change='elastic.getTypes()'></select>
+  <select class='form-control mid-width' ng-model='elastic.index' ng-options='i as i for i in elastic.indices | orderBy' ng-change='elastic.getTypes()'></select>
   Types
   <select class='form-control mid-width' ng-model='elastic.type' ng-options='k as k for (k,v) in elastic.types' ng-change='elastic.resetPreview()'></select>
   <span ng-if='!elastic.random'>
@@ -16,10 +16,8 @@
     <button ng-click='preview()' class='btn btn-xs'>Preview</button>
     <button ng-click='submit()' class='btn btn-xs btn-primary'>Connect</button>
   </span>
-  <span>
-    <a href='#/home'>Home</a>
-  </span>
 </div>
+
 <div ng-if='!elastic.previewMode'>
   <ul>
     <li ng-repeat='(k,v) in elastic.types[elastic.type].headers' ng-bind='k+" -- "+v.type'></li>
