@@ -1,0 +1,31 @@
+<input class='form-control primary-text-box' type='text' ng-model='hdfs.path' ng-change='hdfs.on.pathChange()' placeholder='HDFS directory'>
+<button class="btn" ngf-select ng-model="hdfs.uploadFiles" ngf-multiple="true" ngf-change='hdfs.on.fileChange()' ngf-allow-dir='false'>Select Files</button>
+<button class="btn btn-primary" ng-click='hdfs.submit()' ng-disabled='!hdfs.uploadFiles.length'>Submit</button>
+<a href='#/home'>Home</a>
+<div class='col-md-6'>
+	<h3 class='text-center'>Files in directory</h3>
+	<ul class='list-group'>
+		<li class='list-group-item' ng-repeat='f in hdfs.dirFiles'>
+			<span ng-if='f.type == "DIRECTORY"' ng-click='hdfs.goIntoFolder(f.pathSuffix)'>
+				<i class='glyphicon glyphicon-folder-open list-group-left'></i>
+				<strong ng-bind='f.pathSuffix'></strong>
+				<span class='pull-right badge' ng-bind='f.childrenNum+" files"'></span>
+			</span>
+			<span ng-if='f.type == "FILE"'>
+				<i class='glyphicon glyphicon-file list-group-left'></i>
+				<strong ng-bind='f.pathSuffix'></strong>
+				<span class='pull-right badge' ng-bind='f.humanSize'></span>
+			</span>
+		</li>
+	</ul>
+</div>
+<div class='col-md-6'>
+	<h3 class='text-center'>Files to Upload</h3>
+	<ul class='list-group'>
+		<li class='list-group-item' ng-repeat='f in hdfs.uploadFiles'>
+			<button class='glyphicon glyphicon-remove btn btn-xs btn-danger list-group-left' ng-click='hdfs.on.removeItem($index)'></button>
+			<strong>Filename: </strong><span ng-bind='f.name'></span>
+			<span class='badge' ng-bind='f.humanSize'></span>
+		</li>
+	</ul>
+</div>

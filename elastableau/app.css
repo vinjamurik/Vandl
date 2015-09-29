@@ -7,3 +7,16 @@
 	width: 11%;
 	display: inline;
 }
+
+.primary-text-box {
+	width: 75%;
+	display: inline;
+}
+
+.list-group-left {
+	margin-right: 5px;
+}
+
+span[ng-click] {
+	cursor: pointer;
+}

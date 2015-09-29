@@ -1,8 +1,21 @@
-var express = require('express'),request = require('request'),bodyParser = require('body-parser'),app = express(),port = process.env.PORT || 9001;
+
+var express = require('express');
+var request = require('request');
+var bodyParser = require('body-parser');
+var multiparty = require('multiparty');
+var app = express();
+var port = process.env.PORT || 9001;
+var fs = require('fs');
+var hdfs = require('webhdfs').createClient({
+  user:'webuser',
+  host:'172.31.60.102',
+  port:50070,
+  webhdfs:'/webhdfs/v1'
+});
+var form = new multiparty.Form();
 var elastic = {}
 var url = 'http://172.31.82.218:9200/';
-app.use(express.static('./'));
-app.use(bodyParser.json());
+var hdfsUrl = 'http://172.31.60.102:50070/webhdfs/v1';
 
 var proxyFunction = function(req,res,options){
   console.log('Attempting to proxy request to ' + options.url);
@@ -19,14 +32,13 @@ var proxyFunction = function(req,res,options){
     else {
       error = error || response.statusMessage || response.statusCode;
       console.log('Error fulfilling request: "' + error.toString() + '"');
-      res.sendStatus(response.statusCode);
+      res.end();
     }
   });
 };
 
-app.get('/', function (req, res) {
-  res.sendFile('./index.html');
-});
+app.use(express.static('./'));
+app.use(bodyParser.json());
 
 app.get('/proxy/elastic/preview',function(req,res){
   var options = {
@@ -98,7 +110,24 @@ app.post('/proxy/elastic',function(req,res){
     res.end();
 });
 
-var server = app.listen(port, function () {
+app.get('/proxy/hdfs/dirStatus',function(req,res){
+  var options = {url:hdfsUrl+'/xid'+req.headers.path+'?op=LISTSTATUS'};
+  proxyFunction(req,res,options);
+});
+
+app.post('/proxy/hdfs/upload',function(req,res){
+  form.parse(req,function(err,fields,files){
+    var keys = Object.keys(files);
+    for(var i=0;i<keys.length;i++){
+      var file = files[keys[i]][0];
+      var hdfsPath = '/xid'+(req.headers.path.charAt(req.headers.path.length-1) == '/' ? req.headers.path : req.headers.path+'/')+file.originalFilename;
+      fs.createReadStream(file.path).pipe(hdfs.createWriteStream(hdfsPath));
+    }
+  });
+  res.end();
+});
+
+var server = app.listen(port,function () {
   console.log('Express server listening on port ' + server.address().port);
 });
 

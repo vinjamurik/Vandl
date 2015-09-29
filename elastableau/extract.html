@@ -1,0 +1,39 @@
+<div>
+  Indices
+  <select class='form-control mid-width' ng-model='elastic.index' ng-options='i as i for i in elastic.indices' ng-change='elastic.getTypes()'></select>
+  Types
+  <select class='form-control mid-width' ng-model='elastic.type' ng-options='k as k for (k,v) in elastic.types' ng-change='elastic.resetPreview()'></select>
+  <span ng-if='!elastic.random'>
+    From: <input class='form-control small-width' type='number' ng-model='elastic.from'>
+  </span>
+  <span>
+    Limit: <input class='form-control small-width' type='number' ng-model='elastic.limit'>
+  </span>
+  <span>
+    Random? <input type='checkbox' ng-model='elastic.random'>
+  </span>
+  <span ng-show='elastic.index && elastic.type'>
+    <button ng-click='preview()' class='btn btn-xs'>Preview</button>
+    <button ng-click='submit()' class='btn btn-xs btn-primary'>Connect</button>
+  </span>
+  <span>
+    <a href='#/home'>Home</a>
+  </span>
+</div>
+<div ng-if='!elastic.previewMode'>
+  <ul>
+    <li ng-repeat='(k,v) in elastic.types[elastic.type].headers' ng-bind='k+" -- "+v.type'></li>
+  </ul>
+</div>
+<div ng-if='elastic.previewMode'>
+  <table class='table table-striped'>
+    <thead>
+      <th ng-repeat='(k,v) in elastic.types[elastic.type].headers' ng-bind='k'></th>
+    </thead>
+    <tbody>
+      <tr ng-repeat='p in elastic.pData'>
+        <td ng-repeat='(k,v) in elastic.types[elastic.type].headers' ng-bind='p[k]'></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
