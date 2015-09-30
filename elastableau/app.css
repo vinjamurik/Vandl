@@ -17,7 +17,7 @@
 	margin-right: 5px;
 }
 
-span[ng-click] {
+span[ng-click],i[ng-click] {
 	cursor: pointer;
 }
 

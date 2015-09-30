@@ -4,10 +4,7 @@ version := "1.0"
 
 scalaVersion := "2.10.5"
 
-libraryDependencies += "org.apache.spark" %% "spark-core" % "1.3.0" % "provided"
-libraryDependencies += "org.apache.spark" %% "spark-sql" % "1.3.0" % "provided"
-libraryDependencies += "org.apache.spark" %% "spark-hive" % "1.2.1" % "provided"
-libraryDependencies += "org.apache.spark" % "spark-streaming_2.10" % "1.3.0" % "provided" 
+libraryDependencies += "org.apache.spark" %% "spark-core" % "1.3.0" % "provided" 
 libraryDependencies += "org.elasticsearch" % "elasticsearch-spark_2.10" % "2.1.1" intransitive()
 
 val meta = """META.INF(.)*""".r
@@ -19,3 +16,5 @@ assemblyMergeStrategy in assembly := {
   case meta(_) => MergeStrategy.discard
   case x => MergeStrategy.first
 }
+
+assemblyJarName in assembly := "elaspark.jar"

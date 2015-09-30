@@ -6,6 +6,7 @@ var multiparty = require('multiparty');
 var app = express();
 var port = process.env.PORT || 9001;
 var fs = require('fs');
+var Client = require('ssh2').Client;
 var hdfs = require('webhdfs').createClient({
   user:'webuser',
   host:'172.31.60.102',
@@ -35,6 +36,35 @@ var proxyFunction = function(req,res,options){
       res.end();
     }
   });
+};
+
+var executeScript = function(script,res){
+  var conn = new Client();
+  conn.on('ready', function() {
+    console.log('Client :: ready');
+    conn.exec(script, function(err, stream) {
+      if (err) throw err;
+      stream.on('close', function(code, signal) {
+        console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
+        conn.end();
+        res.end();
+      }).on('data', function(data) {
+        console.log('STDOUT: ' + data);
+      }).stderr.on('data', function(data) {
+        console.log('STDERR: ' + data);
+      });
+    });
+  }).connect({
+    host: '172.31.60.102',
+    port: 22,
+    username: 'mehtaam',
+    privateKey: require('fs').readFileSync('C:/Users/mehtaam/Documents/winscp575/GlobeServer_priv.ppk'),
+    passphrase:'Aatlaron123456!'
+  });
+};
+
+var getHdfsPath = function(req){
+  return '/xid'+(req.headers.path || '/');
 };
 
 app.use(express.static('./'));
@@ -111,7 +141,7 @@ app.post('/proxy/elastic',function(req,res){
 });
 
 app.get('/proxy/hdfs/dirStatus',function(req,res){
-  var options = {url:hdfsUrl+'/xid'+req.headers.path+'?op=LISTSTATUS'};
+  var options = {url:hdfsUrl+getHdfsPath(req)+'?op=LISTSTATUS'};
   proxyFunction(req,res,options);
 });
 
@@ -120,11 +150,16 @@ app.post('/proxy/hdfs/upload',function(req,res){
     var keys = Object.keys(files);
     for(var i=0;i<keys.length;i++){
       var file = files[keys[i]][0];
-      var hdfsPath = '/xid'+(req.headers.path.charAt(req.headers.path.length-1) == '/' ? req.headers.path : req.headers.path+'/')+file.originalFilename;
+      var hdfsPath = getHdfsPath(req)+file.originalFilename;
       fs.createReadStream(file.path).pipe(hdfs.createWriteStream(hdfsPath));
     }
   });
   res.end();
+});
+
+app.get('/proxy/hdfs/execute',function(req,res){
+  var script = 'spark-submit elaspark.jar "MySql" "'+getHdfsPath(req)+'"';
+  executeScript(script,res);
 });
 
 var server = app.listen(port,function () {

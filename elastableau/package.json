@@ -8,6 +8,7 @@
     "express": "^4.13.3",
     "multiparty": "^4.1.2",
     "request": "^2.62.0",
+    "ssh2": "^0.4.11",
     "webhdfs": "^0.2.1"
   },
   "devDependencies": {},

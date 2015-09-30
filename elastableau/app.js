@@ -1,7 +1,5 @@
 angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',function($scope){
-
   $scope.view = 'extract';
-
 }).factory('elastic',function($http){
 	var factory = {};
   factory.index = '';
@@ -99,11 +97,12 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
 
 }).factory('hdfs',function(Upload,$http){
   var factory = {};
-  factory.url = _CONFIG.proxyUrl+'/hdfs/upload';
+  factory.url = _CONFIG.proxyUrl+'/hdfs/';
   factory.dirFiles = [];
   factory.uploadFiles = [];
-  factory.lastGoodPath = '';
-  factory.path = '';
+  factory.path = _CONFIG.defaultPath;
+  factory.lastGoodPath = factory.path;
+  factory.currentFolder = '';
 
   factory.getHumanizedSize = function(size,dPlaces){
     var g = 0;
@@ -111,12 +110,19 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
       g++;
     }
     dPlaces = Math.pow(10,dPlaces);
-    size = size/Math.pow(1000,g);
+    size /= Math.pow(1000,g);
     return Math.round(size*dPlaces)/dPlaces+' '+_CONFIG.fileSize.groups[g];
   };
 
   factory.goIntoFolder = function(folder){
-    factory.path = factory.lastGoodPath+(factory.lastGoodPath == '/' ? '' : '/')+folder;
+    factory.currentFolder = folder;
+    factory.path = factory.lastGoodPath+factory.currentFolder+'/';
+    factory.on.pathChange();
+  };
+
+  factory.getOutOfFolder = function(){
+    factory.path = factory.lastGoodPath.substring(0,factory.lastGoodPath.lastIndexOf(factory.currentFolder+'/'));
+    factory.currentFolder = factory.path.length - 1 ? factory.path.match(/.*\/(.*)\//)[1] : '';
     factory.on.pathChange();
   };
 
@@ -130,7 +136,9 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
       factory.uploadFiles.splice($index,1);
     },
     pathChange:function(){
-      $http.get(_CONFIG.proxyUrl+'/hdfs/dirStatus',{headers:{'path':factory.path}}).then(function(response){
+      factory.path = factory.path || _CONFIG.defaultPath;
+      $http.get(factory.url+'dirStatus',{headers:{'path':factory.path}}).then(function(response){
+        factory.showFolderOut = factory.path.indexOf('/') + 1;
         angular.copy([],factory.dirFiles);
         if(response.data.FileStatuses){
           factory.lastGoodPath = factory.path;
@@ -142,17 +150,26 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
       });
     }
   };
+  factory.on.pathChange();
 
-  factory.submit = function(){
+  factory.upload = function(){
     Upload.upload({
-      url:factory.url,
+      url:factory.url+'upload',
       file:factory.uploadFiles,
       headers:{'path':factory.path}
     }).progress(function(evt){
 
     }).success(function(){
       angular.copy([],factory.uploadFiles);
-    })
+      factory.on.pathChange();
+    });
+  };
+
+  factory.ingest = function(item){
+    item.$executing = true;
+    $http.get(factory.url+'execute',{headers:{path:factory.path+item.pathSuffix}}).then(function(res){
+      item.$executing = false;
+    });
   };
 
   return factory;
