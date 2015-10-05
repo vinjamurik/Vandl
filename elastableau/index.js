@@ -13,28 +13,21 @@ var hdfs = require('webhdfs').createClient({
   port:50070,
   webhdfs:'/webhdfs/v1'
 });
-var form = new multiparty.Form();
 var elastic = {}
+var elasticTypeMap = {
+  'long':'int',
+  'double':'float'
+};
 var url = 'http://172.31.82.218:9200/';
 var hdfsUrl = 'http://172.31.60.102:50070/webhdfs/v1';
 
-var proxyFunction = function(req,res,options){
-  console.log('Attempting to proxy request to ' + options.url);
-  request(options, function (error, response, body) {
-    var header;
-    if (!error && response.statusCode == 200){
-      for (header in response.headers) {
-        if (response.headers.hasOwnProperty(header)) {
-          res.set(header, response.headers[header]);
-        }
-      }
-      res.send(body);
-    }
-    else {
-      error = error || response.statusMessage || response.statusCode;
-      console.log('Error fulfilling request: "' + error.toString() + '"');
-      res.end();
-    }
+var proxyFunction = function(req,res,opt,func){
+  console.log('Attempting to proxy request to '+opt.url);
+  request(opt,function(error,response,body){
+    if(func) body = func(typeof body == 'string' ? JSON.parse(body) : body);
+    res.set('Access-Control-Allow-Origin','*');
+    res.set('Access-Control-Allow-Headers','Content-Type');
+    res.send(body);
   });
 };
 
@@ -64,31 +57,23 @@ var executeScript = function(script,res){
 };
 
 var getHdfsPath = function(req){
-  return '/xid'+(req.headers.path || '/');
+  var path = req.headers.filename || '';
+  path = (req.headers.path || '/') + path;
+  return '/xid'+path;
 };
 
 app.use(express.static('./'));
 app.use(bodyParser.json());
 
 app.get('/proxy/elastic/preview',function(req,res){
-  var options = {
-    url: url+req.query.index+'/'+req.query.type+'/_search',
-    headers: {
-      Accept: 'application/json',
-      'User-Agent': 'elastableau/0.0.0'
-    }
-  };
+  var options = {url:url+req.query.index+'/'+req.query.type+'/_search'};
   proxyFunction(req,res,options);
 });
 
-app.get('/proxy/elastic/data', function (req, res) {
+app.get('/proxy/elastic/data',function(req,res){
   if(elastic.limit >= +req.query.from + elastic.size){
     var options = {
-      url: url+elastic.index+'/'+elastic.type+'/_search?size='+elastic.size+'&from='+req.query.from,
-      headers: {
-        Accept: 'application/json',
-        'User-Agent': 'elastableau/0.0.0'
-      }
+      url: url+elastic.index+'/'+elastic.type+'/_search?size='+elastic.size+'&from='+req.query.from
     };
     if(elastic.random){
       options.method = 'POST';
@@ -104,39 +89,49 @@ app.get('/proxy/elastic/data', function (req, res) {
     }
     proxyFunction(req,res,options);
   }else{
+    res.set('Access-Control-Allow-Origin','*');
     res.send({hits:{hits:[]}});
   }
 });
 
-app.get('/proxy/elastic/indices', function (req, res) {
-  var options = {
-    url: url+'_aliases',
-    headers: {
-      Accept: 'application/json',
-      'User-Agent': 'elastableau/0.0.0'
-    }
-  };
+app.get('/proxy/elastic/indices',function(req,res){
+  var options = {url: url+'_aliases'};
   proxyFunction(req,res,options);
 });
 
 app.get('/proxy/elastic/:index/types', function (req, res) {
-  var options = {
-    url: url+req.params.index+'/_mapping',
-    headers: {
-      Accept: 'application/json',
-      'User-Agent': 'elastableau/0.0.0'
+  var options = {url: url+req.params.index+'/_mapping'};
+  elastic.index = req.params.index;
+  elastic.types = {};
+  var func = function(body){
+    var keys = Object.keys(body[elastic.index].mappings);
+    for(var i=0 ; i < keys.length ; i++){
+      var key = keys[i];
+      elastic.types[key] = {headers:body[elastic.index].mappings[key].properties};
     }
+    return elastic.types;
   };
-  proxyFunction(req,res,options);
+  proxyFunction(req,res,options,func);
 });
 
 app.get('/proxy/elastic/headers',function(req,res){
-  res.send(elastic.headers);
+  var func = function(body){
+    body = {names:[],types:[]};
+    var keys = Object.keys(elastic.types[elastic.type].headers);
+    for(var i=0 ; i < keys.length ; i++){
+      var key = keys[i];
+      body.names.push(key);
+      body.types.push(elastic.types[elastic.type].headers[key].type);
+    }
+    return body;
+  };
+  proxyFunction(req,res,{},func);
 });
 
-app.post('/proxy/elastic',function(req,res){
-    elastic = req.body;
+app.get('/proxy/elastic',function(req,res){
+    require('util')._extend(elastic,req.query);
     elastic.size = Math.min(50000,elastic.limit);
+    res.set('Access-Control-Allow-Origin','*');
     res.end();
 });
 
@@ -146,23 +141,31 @@ app.get('/proxy/hdfs/dirStatus',function(req,res){
 });
 
 app.post('/proxy/hdfs/upload',function(req,res){
-  form.parse(req,function(err,fields,files){
+  new multiparty.Form().parse(req,function(err,fields,files){
     var keys = Object.keys(files);
+    var finishCount = 0;
     for(var i=0;i<keys.length;i++){
       var file = files[keys[i]][0];
       var hdfsPath = getHdfsPath(req)+file.originalFilename;
-      fs.createReadStream(file.path).pipe(hdfs.createWriteStream(hdfsPath));
+      var rStream = fs.createReadStream(file.path);
+      var wStream = hdfs.createWriteStream(hdfsPath);
+      rStream.pipe(wStream);
+      wStream.on('finish',function(){
+        finishCount++;
+        if(finishCount == keys.length){
+          res.end();
+        }
+      });
     }
   });
-  res.end();
 });
 
 app.get('/proxy/hdfs/execute',function(req,res){
-  var script = 'spark-submit elaspark.jar "MySql" "'+getHdfsPath(req)+'"';
+  var script = 'spark-submit elaspark.jar "'+req.headers.filetype+'" "'+getHdfsPath(req)+'" "'+req.headers.filename.split('.')[0]+'"';
   executeScript(script,res);
 });
 
-var server = app.listen(port,function () {
+var server = app.listen(port,function(){
   console.log('Express server listening on port ' + server.address().port);
 });
 

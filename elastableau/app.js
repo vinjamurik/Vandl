@@ -6,24 +6,22 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
   factory.indices = [];
   factory.type = '';
   factory.types = {};
-  factory.typeMap = {
-    'long':'int',
-    'double':'float'
-  };
   factory.from = 0;
   factory.limit = 10000;
+  factory.random = false;
   factory.url = _CONFIG.proxyUrl+'/elastic/';
   factory.pData = [];
+  factory.pCount = 0;
   factory.previewMode = false;
 
   factory.getIndices = function(){
     $http.get(factory.url+'indices').then(function(res){
+      angular.copy([],factory.indices);
       angular.forEach(res.data,function(v,k){
         factory.indices.push(k);
       });
     });
   };
-  factory.getIndices();
 
   factory.resetPreview = function(){
     factory.previewMode = false;
@@ -33,12 +31,21 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
   factory.getTypes = function(){
     factory.resetPreview();
     return $http.get(factory.url+factory.index+'/types').then(function(res){
-      angular.copy({},factory.types);
-      angular.forEach(res.data[factory.index].mappings,function(obj,typeName){
-        factory.types[typeName] = {headers:{}};
-        angular.copy(res.data[factory.index].mappings[typeName].properties,factory.types[typeName].headers);
-      });
+      factory.types = res.data;
     });
+  };
+
+  factory.generateQueryMap = function(){
+    var params = window.location.search.split('&');
+    var queryMap = {};
+    if(params.length && params[0].charAt(0) == '?'){
+      params[0] = params[0].substring(1);
+    }
+    angular.forEach(params,function(item){
+      var kv = item.split('=');
+      queryMap[kv[0]] = kv[1];
+    });
+    angular.extend(factory,queryMap);
   };
 
   return factory;
@@ -46,6 +53,7 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
 }).controller('extract',function($scope,$http,elastic){
 	$scope.elastic = elastic;
 	$scope.connector = tableau.makeConnector();
+  elastic.getIndices();
 
   $scope.connector.getColumnHeaders = function(){
   	$http.get(elastic.url+'headers').then(function(res){
@@ -75,6 +83,7 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
     }else{
       elastic.previewMode = true;
       $http.get(elastic.url+'preview',{params:{index:elastic.index,type:elastic.type}}).then(function(res){
+        elastic.pCount = res.data.hits.total;
         angular.copy([],elastic.pData);
         angular.forEach(res.data.hits.hits,function(hit){
           elastic.pData.push(hit._source);
@@ -84,16 +93,21 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
   };
 
   $scope.submit = function(){
-  	var body = {index:elastic.index,type:elastic.type,from:elastic.from,limit:elastic.limit,random:elastic.random};
-  	body.headers = {names:[],types:[]};
-  	angular.forEach(elastic.types[elastic.type].headers,function(typeObj,name){
-  		body.headers.names.push(name);
-  		body.headers.types.push(elastic.typeMap[typeObj.type] || typeObj.type);
-  	});
-    $http.post(elastic.url,body).then(function(){
+  	var params = {type:elastic.type,from:elastic.from,limit:elastic.limit,random:elastic.random};
+    $http.get(elastic.url,{params:params}).then(function(){
       tableau.submit();
     });
   };
+
+  $scope.submitNow = function(){
+    elastic.generateQueryMap();
+    if(elastic.index){
+      elastic.getTypes().then(function(){
+        $scope.submit();
+      });
+    }
+  };
+  $scope.submitNow();
 
 }).factory('hdfs',function(Upload,$http){
   var factory = {};
@@ -101,8 +115,9 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
   factory.dirFiles = [];
   factory.uploadFiles = [];
   factory.path = _CONFIG.defaultPath;
-  factory.lastGoodPath = factory.path;
   factory.currentFolder = '';
+  factory.fileType = '';
+  factory.uploadDisabled = true;
 
   factory.getHumanizedSize = function(size,dPlaces){
     var g = 0;
@@ -114,15 +129,31 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
     return Math.round(size*dPlaces)/dPlaces+' '+_CONFIG.fileSize.groups[g];
   };
 
+  factory.endsWith = function(path,char){
+    return path[path.length-1] == (char || '/');
+  };
+
+  factory.changeType = function(){
+    factory.fileType = !factory.currentFolder || !factory.fileType ? factory.currentFolder : factory.fileType;
+  };
+
+  factory.changeFolder = function(){
+    var match = factory.path.match(/.*\/(.*)\/$/) || factory.path.match(/.*\/(.*)$/) || ['',''];
+    factory.currentFolder = match[1];
+    factory.changeType();
+  };
+
+  factory.changeUploadDisabled = function(){
+    factory.uploadDisabled = !factory.currentFolder || !factory.uploadFiles || !factory.uploadFiles.length;
+  };
+
   factory.goIntoFolder = function(folder){
-    factory.currentFolder = folder;
-    factory.path = factory.lastGoodPath+factory.currentFolder+'/';
+    factory.path += (factory.endsWith(factory.path) ? '' : '/')+folder.pathSuffix+'/';
     factory.on.pathChange();
   };
 
   factory.getOutOfFolder = function(){
-    factory.path = factory.lastGoodPath.substring(0,factory.lastGoodPath.lastIndexOf(factory.currentFolder+'/'));
-    factory.currentFolder = factory.path.length - 1 ? factory.path.match(/.*\/(.*)\//)[1] : '';
+    factory.path = factory.path.substring(0,factory.path.lastIndexOf(factory.currentFolder+(factory.endsWith(factory.path) ? '/' : '')));
     factory.on.pathChange();
   };
 
@@ -131,32 +162,36 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
       angular.forEach(factory.uploadFiles,function(f){
         f.humanSize = factory.getHumanizedSize(f.size,3);
       });
+      factory.changeUploadDisabled();
     },
     removeItem:function($index){
       factory.uploadFiles.splice($index,1);
+      factory.changeUploadDisabled();
     },
     pathChange:function(){
       factory.path = factory.path || _CONFIG.defaultPath;
+      factory.changeFolder();
       $http.get(factory.url+'dirStatus',{headers:{'path':factory.path}}).then(function(response){
         factory.showFolderOut = factory.path.indexOf('/') + 1;
         angular.copy([],factory.dirFiles);
         if(response.data.FileStatuses){
-          factory.lastGoodPath = factory.path;
           angular.forEach(response.data.FileStatuses.FileStatus,function(item){
             item.humanSize = !!item.length ? factory.getHumanizedSize(item.length,3) : '0 '+_CONFIG.fileSize.groups[0];
             factory.dirFiles.push(item);
           });
         }
+        factory.changeUploadDisabled();
       });
     }
   };
   factory.on.pathChange();
 
   factory.upload = function(){
+    factory.path+=(factory.endsWith(factory.path) ? '' : '/');
     Upload.upload({
       url:factory.url+'upload',
       file:factory.uploadFiles,
-      headers:{'path':factory.path}
+      headers:{'path':factory.path,'filetype':factory.fileType}
     }).progress(function(evt){
 
     }).success(function(){
@@ -167,7 +202,7 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
 
   factory.ingest = function(item){
     item.$executing = true;
-    $http.get(factory.url+'execute',{headers:{path:factory.path+item.pathSuffix}}).then(function(res){
+    $http.get(factory.url+'execute',{headers:{path:factory.path,filetype:factory.fileType,filename:item.pathSuffix}}).then(function(res){
       item.$executing = false;
     });
   };

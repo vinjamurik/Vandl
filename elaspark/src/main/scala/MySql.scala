@@ -44,8 +44,7 @@ object MySql {
   }
 
   def exec(file:String) = {
-  	sc.setLocalProperty("hadoopPath",s"hdfs://c1-master.ec2.internal:8020$file")
-    mainRdd = sc.textFile(sc.getLocalProperty("hadoopPath"))
+  	mainRdd = sc.textFile(s"${sc.getConf.get("hadoopBasePath")}$file")
     mainRdd.cache();
   	mainRdd.filter(isMetaDataLine(_)).collect.foreach(parseTableLine(_))
   	tableMap.foreach(elasticSave(_))

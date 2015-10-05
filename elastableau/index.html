@@ -19,9 +19,11 @@
       <div class='btn-group top-button-bar'>
         <label class='btn btn-success' ng-model='view' btn-radio='"extract"'>Extract</label>
         <label class='btn btn-success' ng-model='view' btn-radio='"ingest"'>Ingest</label>
+        <label class='btn btn-success' ng-model='view' btn-radio='"visualize"'>Visualize</label>
       </div>
     </div>
     <div class='container-fluid' ng-include='"extract.html"' ng-controller='extract' ng-if='view == "extract"'></div>
     <div class='container-fluid' ng-include='"ingest.html"' ng-controller='ingest' ng-if='view == "ingest"'></div>
+    <div class='container-fluid' ng-include='"visualize.html"' ng-controller='ingest' ng-if='view == "visualize"'></div>
   </body>
 </html>
