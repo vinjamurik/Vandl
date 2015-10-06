@@ -1,6 +1,6 @@
 angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',function($scope){
   $scope.view = 'extract';
-}).factory('elastic',function($http){
+}).factory('elastic',function($http,$httpParamSerializer){
 	var factory = {};
   factory.index = '';
   factory.indices = [];
@@ -10,6 +10,7 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
   factory.limit = 10000;
   factory.random = false;
   factory.url = _CONFIG.proxyUrl+'/elastic/';
+  factory.qUrl = '';
   factory.pData = [];
   factory.pCount = 0;
   factory.previewMode = false;
@@ -46,6 +47,11 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
       queryMap[kv[0]] = kv[1];
     });
     angular.extend(factory,queryMap);
+  };
+
+  factory.updateQUrl = function(){
+    var params = {index:factory.index,type:factory.type,from:factory.from,limit:factory.limit,random:factory.random};
+    factory.qUrl = window.location.toString()+$httpParamSerializer(params);
   };
 
   return factory;

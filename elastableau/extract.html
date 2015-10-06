@@ -1,4 +1,4 @@
-<div>
+<div class='top-button-bar'>
   Indices
   <select class='form-control mid-width' ng-model='elastic.index' ng-options='i as i for i in elastic.indices | orderBy' ng-change='elastic.getTypes()'></select>
   Types
@@ -12,10 +12,12 @@
   <span>
     Random? <input type='checkbox' ng-model='elastic.random'>
   </span>
-  <span ng-show='elastic.index && elastic.type'>
-    <button ng-click='preview()' class='btn btn-xs'>Preview</button>
-    <button ng-click='submit()' class='btn btn-xs btn-primary'>Connect</button>
-  </span>
+</div>
+<div ng-show='elastic.index && elastic.type' class='top-button-bar'>
+  <button ng-click='preview()' class='btn btn-xs'>Preview</button>
+  <button ng-click='submit()' class='btn btn-xs btn-primary'>Connect</button>
+  <button ng-click='elastic.updateQUrl()' class='btn btn-xs btn-success'>Show URL</button>
+  <span ng-bind='elastic.qUrl'></span>
 </div>
 
 <div ng-if='!elastic.previewMode'>

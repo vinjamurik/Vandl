@@ -20,6 +20,11 @@ var elasticTypeMap = {
 };
 var url = 'http://172.31.82.218:9200/';
 var hdfsUrl = 'http://172.31.60.102:50070/webhdfs/v1';
+/*var AWS = require('aws-sdk');
+var s3 = new AWS.S3({
+  accessKeyId:'AKIAJUFNNYKM4OFFQLBQ',
+  secretAccessKey:'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'
+});*/
 
 var proxyFunction = function(req,res,opt,func){
   console.log('Attempting to proxy request to '+opt.url);

@@ -74,6 +74,6 @@ object AgolLogs {
   }
 
   def exec() = {
-  	sc.textFile(s"s3n://x-globe-logs/*/*/*/*/*/*/*/*").map((x:String) => getLogObjectFrom(x)).saveToEs("xid_elb_logs/default")
+  	sc.textFile(s"s3n://x-globe-logs/elb/*/*/*/*/*/*/*").map((x:String) => getLogObjectFrom(x)).saveToEs("xid_elb_logs/default")
   }
 }
