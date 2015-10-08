@@ -75,8 +75,29 @@ app.get('/proxy/elastic/preview',function(req,res){
   proxyFunction(req,res,options);
 });
 
+app.get('/proxy/elastic',function(req,res){
+    require('util')._extend(elastic,req.query);
+    elastic.size = elastic.limit > 0 ? Math.min(50000,elastic.limit) : 50000;
+    if(elastic.limit <= 0){
+      var options = {url:url+elastic.index+'/'+elastic.type+'/_search?search_type=scan&scroll=1m&size=5000'};
+      var func = function(body){
+        elastic.scroll_id = body._scroll_id;
+      };
+      proxyFunction(req,res,options,func);
+    }else{
+      res.set('Access-Control-Allow-Origin','*');
+      res.end();
+    }
+});
+
 app.get('/proxy/elastic/data',function(req,res){
-  if(elastic.limit >= +req.query.from + elastic.size){
+  if(elastic.limit <= 0){
+    var options = {
+      url:url+'_search/scroll?scroll=1m&scroll_id='+(req.query.scroll_id == '0' ? elastic.scroll_id : req.query.scroll_id)
+    };
+    proxyFunction(req,res,options);
+  }
+  else if(elastic.limit >= +req.query.from + elastic.size){
     var options = {
       url: url+elastic.index+'/'+elastic.type+'/_search?size='+elastic.size+'&from='+req.query.from
     };
@@ -133,13 +154,6 @@ app.get('/proxy/elastic/headers',function(req,res){
   proxyFunction(req,res,{},func);
 });
 
-app.get('/proxy/elastic',function(req,res){
-    require('util')._extend(elastic,req.query);
-    elastic.size = Math.min(50000,elastic.limit);
-    res.set('Access-Control-Allow-Origin','*');
-    res.end();
-});
-
 app.get('/proxy/hdfs/dirStatus',function(req,res){
   var options = {url:hdfsUrl+getHdfsPath(req)+'?op=LISTSTATUS'};
   proxyFunction(req,res,options);
@@ -173,5 +187,11 @@ app.get('/proxy/hdfs/execute',function(req,res){
 var server = app.listen(port,function(){
   console.log('Express server listening on port ' + server.address().port);
 });
+
+/*s3.listBuckets(function(err,data){
+  for(d of data.Buckets){
+    fs.appendFile('bucketList.txt',JSON.stringify(d)+'\n');
+  }
+});*/
 
 module.exports = app;

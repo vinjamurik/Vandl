@@ -16,25 +16,24 @@ object S3Logs {
      val operation:String = "",
      val key:String = "",
      val requestUri:String = "",
-     val httpStatus:Int = 0,
+     val httpStatus:String = "",
      val errorCode:String = "",
-     val bytesSent:Int = 0,
-     val objectSize:Int = 0,
-     val totalTime:Int= 0,
-     val turnAroundTime:Int = 0,
+     val bytesSent:String = "",
+     val objectSize:String = "",
+     val totalTime:String= "",
+     val turnAroundTime:String = "",
      val referrer:String = "",
      val userAgent:String = "",
-     val versionId:String = "",
-     val _source:String = ""
+     val versionId:String = ""
   )
 
   def getLogObjectFrom(logLine:String) = {
     try{
       val m = """(\S+?) (\S+?) \[(.+?)\] (\S+?) (\S+?) (\S+?) (\S+?) (\S+?) "(.+?)" (\S+?) (\S+?) (\S+?) (\S+?) (\S+?) (\S+?) "(.+?)" "(.+?)" (\S+?)""".r.findFirstMatchIn(logLine).get
-      S3Log(m.group(1),m.group(2),m.group(3),m.group(4),m.group(5),m.group(6),m.group(7),m.group(8),m.group(9),m.group(10).toInt,m.group(11),m.group(12).toInt,m.group(13).toInt,m.group(14).toInt,
-        m.group(15).toInt,m.group(16),m.group(17),m.group(18),logLine)
+      S3Log(m.group(1),m.group(2),m.group(3),m.group(4),m.group(5),m.group(6),m.group(7),m.group(8),m.group(9),m.group(10),m.group(11),m.group(12),m.group(13),m.group(14),
+        m.group(15),m.group(16),m.group(17),m.group(18))
     }catch{
-      case e:Exception => S3Log(_source=logLine)
+      case e:Exception => S3Log()
     }
   }
 

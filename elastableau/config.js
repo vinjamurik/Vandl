@@ -3,5 +3,6 @@ var _CONFIG = {
 	fileSize:{
 		groups:['B','KB','MB','GB','TB']
 	},
-	defaultPath:'/'
+	defaultPath:'/',
+	Ip:'http://172.31.22.52'
 }

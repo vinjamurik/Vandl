@@ -7,7 +7,7 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
   factory.type = '';
   factory.types = {};
   factory.from = 0;
-  factory.limit = 10000;
+  factory.limit = 0;
   factory.random = false;
   factory.url = _CONFIG.proxyUrl+'/elastic/';
   factory.qUrl = '';
@@ -49,9 +49,10 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
     angular.extend(factory,queryMap);
   };
 
-  factory.updateQUrl = function(){
+  factory.generateQUrl = function(){
     var params = {index:factory.index,type:factory.type,from:factory.from,limit:factory.limit,random:factory.random};
-    factory.qUrl = window.location.toString()+$httpParamSerializer(params);
+    factory.qUrl = _CONFIG.Ip+':'+window.location.port+window.location.pathname+'?'+$httpParamSerializer(params);
+    return factory.qUrl;
   };
 
   return factory;
@@ -69,14 +70,23 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
 
   $scope.connector.getTableData = function(from){
     from = (from || 0);
-    var config = {params:{from:from}};
+    var config = {params:{}};
+    if(elastic.limit > 0){
+      config.params.from = from;
+    }else{
+      config.params.scroll_id = from;
+    }
     $http.get(elastic.url+'data',config).then(function(response){
       var data = [];
       angular.forEach(response.data.hits.hits,function(hit){
         data.push(hit._source);
       });
-      var offset = +(from)+data.length;
-      tableau.dataCallback(data,offset.toString(),data.length > 0);
+      if(elastic.limit > 0){
+        var offset = +(from)+data.length;
+        tableau.dataCallback(data,offset.toString(),data.length > 0);
+      }else{
+        tableau.dataCallback(data,response.data._scroll_id,data.length > 0);
+      }
     });
   };
 
@@ -98,22 +108,22 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
     }
   };
 
-  $scope.submit = function(){
-  	var params = {type:elastic.type,from:elastic.from,limit:elastic.limit,random:elastic.random};
-    $http.get(elastic.url,{params:params}).then(function(){
-      tableau.submit();
-    });
+  $scope.connect = function(){
+  	window.location.href = elastic.generateQUrl();
   };
 
-  $scope.submitNow = function(){
+  $scope.submit = function(){
     elastic.generateQueryMap();
     if(elastic.index){
       elastic.getTypes().then(function(){
-        $scope.submit();
+        var params = {type:elastic.type,from:elastic.from,limit:elastic.limit,random:elastic.random};
+        $http.get(elastic.url,{params:params}).then(function(){
+          tableau.submit();
+        });
       });
     }
   };
-  $scope.submitNow();
+  $scope.submit();
 
 }).factory('hdfs',function(Upload,$http){
   var factory = {};
@@ -217,4 +227,24 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
 
 }).controller('ingest',function($scope,hdfs){
   $scope.hdfs = hdfs;
+}).factory('visualize',function(){
+  var factory = {};
+  factory.images = [
+    {
+      img:'img/kibana.png',
+      href:'http://172.31.84.221:5601'
+    },
+    {
+      img:'img/plotly.png',
+      href:''
+    },
+    {
+      img:'img/tableau.png',
+      href:'http://172.31.9.66'
+    }
+  ];
+
+  return factory;
+}).controller('visualize',function(visualize,$scope){
+  $scope.visualize = visualize;
 });

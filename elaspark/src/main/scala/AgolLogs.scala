@@ -7,7 +7,7 @@ object AgolLogs {
 	var sc:SparkContext = null
 
   case class ElasticLog(
-     val timestamp:String = "19000101",
+     val timestamp:String = "1900-01-01 00:00:00",
      val loadBalanceName:String = "-",
      val clientIP:String = "-",
      val serverIP:String = "-",
