@@ -241,6 +241,14 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
     {
       img:'img/tableau.png',
       href:'http://172.31.9.66'
+    },
+    {
+      img:'img/bokeh.png',
+      href:'http://172.31.48.155'
+    },
+    {
+      img:'img/rshiny.png',
+      href:''
     }
   ];
 
