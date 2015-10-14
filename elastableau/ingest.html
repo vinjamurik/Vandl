@@ -1,6 +1,17 @@
-<input class='form-control primary-text-box' type='text' ng-model='hdfs.path' ng-change='hdfs.on.pathChange()' title='HDFS directory'>
-<button class="btn" ngf-select ng-model="hdfs.uploadFiles" ngf-multiple="true" ngf-change='hdfs.on.fileChange()' ngf-allow-dir='false'>Select Files</button>
-<button class="btn btn-primary" ng-click='hdfs.upload()' ng-disabled='hdfs.uploadDisabled'>Upload</button>
+<div class='text-center'>
+	<div class='btn-group top-button-bar'>
+		<button class='btn btn-warning' ng-repeat='s in s3.fileTypes' ng-click='s3.ingest(s)' ng-disabled='s.$executing'>
+			<i class='glyphicon glyphicon-refresh fa-spin' ng-if='s.$executing'></i>
+			<span ng-bind='s.name'></span>
+		</button>
+	</div>
+</div>
+
+<div class='container-fluid'>
+	<input class='form-control primary-text-box' type='text' ng-model='hdfs.path' ng-change='hdfs.on.pathChange()' title='HDFS directory'>
+	<button class="btn" ngf-select ng-model="hdfs.uploadFiles" ngf-multiple="true" ngf-change='hdfs.on.fileChange()' ngf-allow-dir='false'>Select Files</button>
+	<button class="btn btn-primary" ng-click='hdfs.upload()' ng-disabled='hdfs.uploadDisabled'>Upload</button>
+</div>
 
 <div class='col-md-6'>
 	<h3 class='text-center'>Files in directory <i class='glyphicon glyphicon-arrow-up' ng-click='hdfs.getOutOfFolder()' ng-if='hdfs.currentFolder'></i> </h3>

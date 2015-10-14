@@ -18,9 +18,12 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
   factory.getIndices = function(){
     $http.get(factory.url+'indices').then(function(res){
       angular.copy([],factory.indices);
+      factory.indices.push('');
       angular.forEach(res.data,function(v,k){
         factory.indices.push(k);
       });
+      factory.index = '';
+      factory.type = '';
     });
   };
 
@@ -33,6 +36,8 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
     factory.resetPreview();
     return $http.get(factory.url+factory.index+'/types').then(function(res){
       factory.types = res.data;
+      factory.types[''] = {};
+      factory.type = '';
     });
   };
 
@@ -124,6 +129,12 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
     }
   };
   $scope.submit();
+
+  $scope.delete = function(){
+    $http.delete(elastic.url+'delete',{params:{index:elastic.index,type:elastic.type}}).then(function(res){
+      elastic.getIndices();
+    });
+  };
 
 }).factory('hdfs',function(Upload,$http){
   var factory = {};
@@ -225,8 +236,31 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
 
   return factory;
 
-}).controller('ingest',function($scope,hdfs){
+}).factory('s3',function($http){
+  var factory = {};
+  factory.url = _CONFIG.proxyUrl+'/s3/';
+  factory.fileTypes = [
+    {
+      name:'AGOL Logs',
+      type:'agol_log'
+    },
+    {
+      name:'S3 Logs',
+      type:'s3_log'
+    }
+  ];
+
+  factory.ingest = function(item){
+    item.$executing = true;
+    $http.get(factory.url+'execute',{headers:{type:item.type}}).then(function(res){
+      item.$executing = true;
+    });
+  };
+
+  return factory;
+}).controller('ingest',function($scope,hdfs,s3){
   $scope.hdfs = hdfs;
+  $scope.s3 = s3;
 }).factory('visualize',function(){
   var factory = {};
   factory.images = [
@@ -248,6 +282,10 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
     },
     {
       img:'img/rshiny.png',
+      href:''
+    },
+    {
+      img:'img/paxata.png',
       href:''
     }
   ];

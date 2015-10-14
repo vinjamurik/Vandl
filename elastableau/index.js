@@ -154,6 +154,11 @@ app.get('/proxy/elastic/headers',function(req,res){
   proxyFunction(req,res,{},func);
 });
 
+app.delete('/proxy/elastic/delete',function(req,res){
+  var options = {url:url+req.query.index+'/'+(req.query.type || ''),method:'DELETE'};
+  proxyFunction(req,res,options);
+});
+
 app.get('/proxy/hdfs/dirStatus',function(req,res){
   var options = {url:hdfsUrl+getHdfsPath(req)+'?op=LISTSTATUS'};
   proxyFunction(req,res,options);
@@ -183,6 +188,12 @@ app.get('/proxy/hdfs/execute',function(req,res){
   var script = 'spark-submit elaspark.jar "'+req.headers.filetype+'" "'+getHdfsPath(req)+'" "'+req.headers.filename.split('.')[0]+'"';
   executeScript(script,res);
 });
+
+app.get('/proxy/s3/execute',function(req,res){
+  var script = 'spark-submit elaspark.jar "'+req.headers.type+'"';
+  executeScript(script,res);
+});
+
 
 var server = app.listen(port,function(){
   console.log('Express server listening on port ' + server.address().port);
