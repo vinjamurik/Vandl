@@ -6,7 +6,9 @@
   "dependencies": {
     "aws-sdk": "^2.2.6",
     "body-parser": "^1.14.0",
+    "cookie-parser": "^1.4.0",
     "express": "^4.13.3",
+    "jsonwebtoken": "^5.4.0",
     "multiparty": "^4.1.2",
     "request": "^2.62.0",
     "ssh2": "^0.4.11",

@@ -1,0 +1,36 @@
+<div ng-controller='extract'>
+  <div class='top-bar'>
+    Indices
+    <select class='form-control mid-width' ng-model='elastic.index' ng-options='i as i for i in elastic.indices | orderBy' ng-change='elastic.getTypes()'></select>
+    Types
+    <select class='form-control mid-width' ng-model='elastic.type' ng-options='k as k for (k,v) in elastic.types' ng-change='elastic.preview()'></select>
+    <span ng-if='!elastic.random'>
+      From: <input class='form-control small-width' type='number' ng-model='elastic.from'>
+    </span>
+    <span>
+      Limit: <input class='form-control small-width' type='number' ng-model='elastic.limit'>
+    </span>
+    <span>
+      <input type='checkbox' ng-model='elastic.random' ng-change='elastic.generateQUrl()'> Random
+    </span>
+  </div>
+  
+  <div ng-show='elastic.index' class='top-bar'>
+    <button ng-click='elastic.extract()' ng-show='elastic.type' class='btn btn-xs btn-success'>Extract</button>
+    <button ng-click='elastic.delete()' class='btn btn-xs btn-danger'>Delete</button>
+  </div>
+
+  <div>
+    <h4 class='text-center' ng-bind='"Total Records: "+elastic.count'></h4>
+    <table class='table table-striped'>
+      <thead>
+        <th ng-repeat='t in elastic.types[elastic.type]' ng-bind='t.name'></th>
+      </thead>
+      <tbody>
+        <tr ng-repeat='p in elastic.data'>
+          <td ng-repeat='t in elastic.types[elastic.type]' ng-bind='p._source[t.name]'></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

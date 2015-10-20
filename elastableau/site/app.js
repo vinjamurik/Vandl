@@ -1,6 +1,59 @@
-angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',function($scope){
-  $scope.view = 'extract';
-}).factory('elastic',function($http,$httpParamSerializer){
+angular.module('elastableau',['ui.bootstrap','ngFileUpload','ngStorage']).config(function($httpProvider){
+  $httpProvider.interceptors.push(function($sessionStorage){
+    return {
+      request:function(config){
+        config.headers.authToken = $sessionStorage.authToken || '';
+        return config;
+      }
+    };
+  });
+}).factory('home',function($http,$sessionStorage,$location){
+  var factory = {};
+  factory.user = {};
+  factory.view = _CONFIG.modules[0].label;
+
+  factory.login = function(){
+    return $http.post(_CONFIG.proxyUrl+'/login',factory.user).then(function(res){
+      $sessionStorage.authToken = res.data;
+      $sessionStorage.authUser = factory.user.username;
+      factory.view = _CONFIG.modules[0].label;
+      angular.copy({},factory.user);
+    });
+  };
+
+  factory.logout = function(){
+    $sessionStorage.$reset();
+    factory.view = _CONFIG.loginModule.label;
+  };
+
+  factory.isLoggedIn = function(){
+    return !!$sessionStorage.authToken;
+  };
+
+  return factory;
+
+}).controller('home',function($scope,$sessionStorage,home,elastic,hdfs){
+  $scope.home = home;
+  $scope._CONFIG = _CONFIG;
+  $scope.$sessionStorage = $sessionStorage;
+
+  $scope.login = function(){
+    home.login().then(function(){
+      $scope.reRoute();  
+    });
+  };
+
+  $scope.reRoute = function(){
+    if(!home.isLoggedIn()){
+      home.view = _CONFIG.loginModule.label;
+    }else{
+      elastic.getIndices();
+      hdfs.on.pathChange();
+    }
+  };
+  $scope.reRoute();
+
+}).factory('elastic',function($http,$sessionStorage){
 	var factory = {};
   factory.index = '';
   factory.indices = [];
@@ -10,138 +63,94 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
   factory.limit = 0;
   factory.random = false;
   factory.url = _CONFIG.proxyUrl+'/elastic/';
-  factory.qUrl = '';
-  factory.pData = [];
-  factory.pCount = 0;
-  factory.previewMode = false;
-
+  factory.data = [];
+  factory.count = 0;
+  factory.connector = tableau.makeConnector();
+  
   factory.getIndices = function(){
     $http.get(factory.url+'indices').then(function(res){
       angular.copy([],factory.indices);
-      factory.indices.push('');
       angular.forEach(res.data,function(v,k){
         factory.indices.push(k);
       });
-      factory.index = '';
-      factory.type = '';
     });
-  };
-
-  factory.resetPreview = function(){
-    factory.previewMode = false;
-    angular.copy([],factory.pData);
   };
 
   factory.getTypes = function(){
-    factory.resetPreview();
-    return $http.get(factory.url+factory.index+'/types').then(function(res){
-      factory.types = res.data;
-      factory.types[''] = {};
-      factory.type = '';
+    return $http.get(factory.url+'types',{params:{index:factory.index}}).then(function(res){
+      angular.copy({},factory.types);
+      angular.forEach(res.data[factory.index].mappings,function(typeVal,type){
+        factory.types[type] = [];
+        angular.forEach(typeVal.properties,function(obj,key){
+          factory.types[type].push({name:key,type:obj.type});
+        });
+      });
     });
   };
 
-  factory.generateQueryMap = function(){
-    var params = window.location.search.split('&');
-    var queryMap = {};
-    if(params.length && params[0].charAt(0) == '?'){
-      params[0] = params[0].substring(1);
-    }
-    angular.forEach(params,function(item){
-      var kv = item.split('=');
-      queryMap[kv[0]] = kv[1];
+  factory.connector.getColumnHeaders = function(){
+    var headers = {names:[],types:[]};
+    angular.forEach(JSON.parse(tableau.connectionData).fields,function(field){
+      headers.names.push(field.name);
+      headers.types.push(field.type);
     });
-    angular.extend(factory,queryMap);
+    tableau.headersCallback(headers.names,headers.types);
   };
 
-  factory.generateQUrl = function(){
-    var params = {index:factory.index,type:factory.type,from:factory.from,limit:factory.limit,random:factory.random};
-    factory.qUrl = _CONFIG.Ip+':'+window.location.port+window.location.pathname+'?'+$httpParamSerializer(params);
-    return factory.qUrl;
-  };
-
-  return factory;
-
-}).controller('extract',function($scope,$http,elastic){
-	$scope.elastic = elastic;
-	$scope.connector = tableau.makeConnector();
-  elastic.getIndices();
-
-  $scope.connector.getColumnHeaders = function(){
-  	$http.get(elastic.url+'headers').then(function(res){
-  		tableau.headersCallback(res.data.names,res.data.types);
-  	});
-  };
-
-  $scope.connector.getTableData = function(from){
-    from = (from || 0);
-    var config = {params:{}};
-    if(elastic.limit > 0){
-      config.params.from = from;
-    }else{
-      config.params.scroll_id = from;
-    }
-    $http.get(elastic.url+'data',config).then(function(response){
+  factory.connector.getTableData = function(from){
+    var params = JSON.parse(tableau.connectionData);
+    from = from || '';
+    delete params.fields;
+    params.from = from;
+    $http.get(factory.url+'data',{params:params}).then(function(res){
       var data = [];
-      angular.forEach(response.data.hits.hits,function(hit){
+      angular.forEach(res.data.hits.hits,function(hit){
         data.push(hit._source);
       });
-      if(elastic.limit > 0){
-        var offset = +(from)+data.length;
-        tableau.dataCallback(data,offset.toString(),data.length > 0);
+      var moreRecords = data.length > 0;
+      if(params.limit > 0){
+        from = parseInt(from)+data.length;
       }else{
-        tableau.dataCallback(data,response.data._scroll_id,data.length > 0);
+        if(!from){
+          moreRecords = true;
+        }
+        from = res.data._scroll_id;
       }
+      tableau.dataCallback(data,from,moreRecords);
+    });
+  };
+
+  factory.preview = function(){
+    $http.get(factory.url+'preview',{params:{index:factory.index,type:factory.type}}).then(function(res){
+      factory.count = res.data.hits.total;
+      factory.data = res.data.hits.hits;
+    });
+  };
+
+  factory.extract = function(){
+    tableau.connectionData = JSON.stringify({index:factory.index,type:factory.type,fields:factory.types[factory.type],from:factory.from,limit:factory.limit,random:factory.random,authToken:$sessionStorage.authToken});
+    tableau.submit();
+  };
+
+  factory.delete = function(){
+    $http.delete(factory.url+'delete',{params:{index:factory.index,type:factory.type}}).then(function(res){
+      factory.getIndices();
     });
   };
 
   tableau.connectionName = 'Elastableau';
-  tableau.registerConnector($scope.connector);
+  tableau.registerConnector(factory.connector);
 
-  $scope.preview = function(){
-    if(elastic.previewMode){
-      elastic.resetPreview();
-    }else{
-      elastic.previewMode = true;
-      $http.get(elastic.url+'preview',{params:{index:elastic.index,type:elastic.type}}).then(function(res){
-        elastic.pCount = res.data.hits.total;
-        angular.copy([],elastic.pData);
-        angular.forEach(res.data.hits.hits,function(hit){
-          elastic.pData.push(hit._source);
-        });
-      });
-    }
-  };
+  return factory;
 
-  $scope.connect = function(){
-  	window.location.href = elastic.generateQUrl();
-  };
-
-  $scope.submit = function(){
-    elastic.generateQueryMap();
-    if(elastic.index){
-      elastic.getTypes().then(function(){
-        var params = {type:elastic.type,from:elastic.from,limit:elastic.limit,random:elastic.random};
-        $http.get(elastic.url,{params:params}).then(function(){
-          tableau.submit();
-        });
-      });
-    }
-  };
-  $scope.submit();
-
-  $scope.delete = function(){
-    $http.delete(elastic.url+'delete',{params:{index:elastic.index,type:elastic.type}}).then(function(res){
-      elastic.getIndices();
-    });
-  };
-
+}).controller('extract',function($scope,elastic){
+	$scope.elastic = elastic;
 }).factory('hdfs',function(Upload,$http){
   var factory = {};
   factory.url = _CONFIG.proxyUrl+'/hdfs/';
   factory.dirFiles = [];
   factory.uploadFiles = [];
-  factory.path = _CONFIG.defaultPath;
+  factory.path = '/';
   factory.currentFolder = '';
   factory.fileType = '';
   factory.uploadDisabled = true;
@@ -196,7 +205,7 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
       factory.changeUploadDisabled();
     },
     pathChange:function(){
-      factory.path = factory.path || _CONFIG.defaultPath;
+      factory.path = factory.path || '/';
       factory.changeFolder();
       $http.get(factory.url+'dirStatus',{headers:{'path':factory.path}}).then(function(response){
         factory.showFolderOut = factory.path.indexOf('/') + 1;
@@ -211,7 +220,6 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
       });
     }
   };
-  factory.on.pathChange();
 
   factory.upload = function(){
     factory.path+=(factory.endsWith(factory.path) ? '' : '/');
@@ -258,6 +266,7 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
   };
 
   return factory;
+
 }).controller('ingest',function($scope,hdfs,s3){
   $scope.hdfs = hdfs;
   $scope.s3 = s3;
@@ -286,11 +295,12 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload']).controller('home',
     },
     {
       img:'img/paxata.png',
-      href:''
+      href:'https://pri-poc.paxata.com'
     }
   ];
 
   return factory;
+
 }).controller('visualize',function(visualize,$scope){
   $scope.visualize = visualize;
 });

@@ -3,11 +3,13 @@ object AgolLogs {
 	import org.apache.spark.SparkContext
   import org.apache.spark.SparkContext._
   import org.apache.spark.SparkConf
+  import java.util.Date
+  import java.text.SimpleDateFormat
 
 	var sc:SparkContext = null
 
   case class ElasticLog(
-     val timestamp:String = "1900-01-01 00:00:00",
+     val timestamp:Date = new Date(0),
      val loadBalanceName:String = "-",
      val clientIP:String = "-",
      val serverIP:String = "-",
@@ -34,7 +36,7 @@ object AgolLogs {
       val m_sub = """/rest/services/([A-z_]+)/([A-z_]+)/""".r.findFirstMatchIn(m.group(13))
       val m_timestamp = "([\\d-]+?)T([\\d:]+?)\\.".r.findFirstMatchIn(m.group(1))
       ElasticLog(
-        m_timestamp.get.group(1)+" "+m_timestamp.get.group(2),
+        new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(m_timestamp.get.group(1)+" "+m_timestamp.get.group(2)),
         m.group(2),
         m.group(3),
         m.group(4),
