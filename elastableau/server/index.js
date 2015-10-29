@@ -16,8 +16,12 @@ var url = 'http://172.31.82.218:9200/';
 var hdfsUrl = 'http://172.31.60.102:50070/webhdfs/v1';
 var loginPath = '/proxy/login';
 
+var getElasticBatchSize = function(arg){
+  return Math.min(50000,arg);
+};
+
 var proxyFunction = function(req,res,opt,func){
-  console.log('Attempting to proxy request to '+opt.url);
+  console.log('Attempting to proxy request to '+opt.url+'?'+JSON.stringify(opt.qs));
   request(opt,function(error,response,body){
     if(func) body = func(typeof body == 'string' ? JSON.parse(body) : body);
     res.set('Access-Control-Allow-Origin','*');
@@ -46,7 +50,7 @@ var executeScript = function(script,res){
     host: '172.31.60.102',
     port: 22,
     username: 'mehtaam',
-    privateKey: require('fs').readFileSync('C:/Users/mehtaam/Documents/winscp575/GlobeServer_priv.ppk'),
+    privateKey: fs.readFileSync('C:/Users/mehtaam/Documents/winscp575/GlobeServer_priv.ppk'),
     passphrase:'Aatlaron123456!'
   });
 };
@@ -69,13 +73,14 @@ app.get('/proxy/elastic/preview',function(req,res){
 });
 
 app.get('/proxy/elastic/data',function(req,res){
-  var size = Math.min(50000,+req.query.limit-+req.query.from);
-  var options;
   if(+req.query.limit > 0){
-    options = {url:url+req.query.index+'/'+req.query.type+'/_search',qs:{from:+req.query.from,size:size}};
+    var options = {url:url+req.query.index+'/'+req.query.type+'/_search',qs:{from:+req.query.from,size:getElasticBatchSize(+req.query.limit-+req.query.from)}};
+    if(req.query.random == 'true'){
+      options.method = 'POST'; options.json = true; options.body = {"query":{"function_score":{"query":{"match_all":{}},"random_score":{}}}};
+    }
   }else{
-    options = !req.query.from ? {url:url+req.query.index+'/'+req.query.type+'/_search',qs:{scroll:'1m',size:'5000',search_type:'scan'}} : 
-      {url:url+'_search/scroll',qs:{scroll:'1m',scroll_id:req.query.from}};
+    var options = isNaN(req.query.from) ? {url:url+'_search/scroll',qs:{scroll:'1m',scroll_id:req.query.from}} : 
+      {url:url+req.query.index+'/'+req.query.type+'/_search',qs:{scroll:'1m',size:'5000',search_type:'scan'}};
   }
   proxyFunction(req,res,options);
 });
@@ -99,6 +104,11 @@ app.delete('/proxy/elastic/delete',function(req,res){
 
 app.get('/proxy/hdfs/dirStatus',function(req,res){
   var options = {url:hdfsUrl+getHdfsPath(req)+'?op=LISTSTATUS'};
+  proxyFunction(req,res,options);
+});
+
+app.delete('/proxy/hdfs/deleteFile',function(req,res){
+  var options = {url:hdfsUrl+getHdfsPath(req)+'?op=DELETE&recursive=false',method:'DELETE'};
   proxyFunction(req,res,options);
 });
 

@@ -66,26 +66,43 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload','ngStorage']).config
   factory.data = [];
   factory.count = 0;
   factory.connector = tableau.makeConnector();
+
+  factory.reset = function(args){
+    angular.forEach(args,function(arg){
+      switch(typeof factory[arg]){
+        case 'object':
+          factory[arg] = angular.isArray(factory[arg]) ? [] : {};
+          break;
+        case 'string':
+          factory[arg] = '';
+          break;
+        default:
+          factory[arg] = 0;
+      }
+    });
+  };
   
   factory.getIndices = function(){
+    factory.reset(['index','indices']);
     $http.get(factory.url+'indices').then(function(res){
-      angular.copy([],factory.indices);
-      angular.forEach(res.data,function(v,k){
+      angular.forEach(angular.extend({'':{}},res.data),function(v,k){
         factory.indices.push(k);
       });
     });
   };
 
   factory.getTypes = function(){
-    return $http.get(factory.url+'types',{params:{index:factory.index}}).then(function(res){
-      angular.copy({},factory.types);
-      angular.forEach(res.data[factory.index].mappings,function(typeVal,type){
-        factory.types[type] = [];
-        angular.forEach(typeVal.properties,function(obj,key){
-          factory.types[type].push({name:key,type:obj.type});
+    factory.reset(['type','types','count']);
+    if(factory.index){
+      return $http.get(factory.url+'types',{params:{index:factory.index}}).then(function(res){
+        angular.forEach(angular.extend({'':{}},res.data[factory.index].mappings),function(typeVal,type){
+          factory.types[type] = [];
+          angular.forEach(typeVal.properties,function(obj,key){
+            factory.types[type].push({name:key,type:obj.type});
+          });
         });
       });
-    });
+    }
   };
 
   factory.connector.getColumnHeaders = function(){
@@ -99,7 +116,7 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload','ngStorage']).config
 
   factory.connector.getTableData = function(from){
     var params = JSON.parse(tableau.connectionData);
-    from = from || '';
+    from = from || params.from;
     delete params.fields;
     params.from = from;
     $http.get(factory.url+'data',{params:params}).then(function(res){
@@ -109,7 +126,7 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload','ngStorage']).config
       });
       var moreRecords = data.length > 0;
       if(params.limit > 0){
-        from = parseInt(from)+data.length;
+        from = +from+data.length;
       }else{
         if(!from){
           moreRecords = true;
@@ -121,19 +138,24 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload','ngStorage']).config
   };
 
   factory.preview = function(){
-    $http.get(factory.url+'preview',{params:{index:factory.index,type:factory.type}}).then(function(res){
-      factory.count = res.data.hits.total;
-      factory.data = res.data.hits.hits;
-    });
+    factory.reset(['count','data']);
+    if(factory.type){
+      $http.get(factory.url+'preview',{params:{index:factory.index,type:factory.type}}).then(function(res){
+        factory.count = res.data.hits.total;
+        factory.data = res.data.hits.hits;
+      });
+    }
   };
 
   factory.extract = function(){
+    factory.from = +!factory.random*factory.from;
     tableau.connectionData = JSON.stringify({index:factory.index,type:factory.type,fields:factory.types[factory.type],from:factory.from,limit:factory.limit,random:factory.random,authToken:$sessionStorage.authToken});
     tableau.submit();
   };
 
   factory.delete = function(){
     $http.delete(factory.url+'delete',{params:{index:factory.index,type:factory.type}}).then(function(res){
+      factory.reset(['type','types']);
       factory.getIndices();
     });
   };
@@ -217,6 +239,12 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload','ngStorage']).config
           });
         }
         factory.changeUploadDisabled();
+      });
+    },
+    deleteFile:function(item){
+      factory.path = factory.path || '/';
+      $http.delete(factory.url+'deleteFile',{headers:{'path':factory.path,'filename':item.pathSuffix}}).then(function(res){
+        factory.on.pathChange();
       });
     }
   };

@@ -22,7 +22,7 @@
                 <button class='btn btn-success' ng-repeat='a in _CONFIG.modules' ng-click='home.view = a.label'><label ng-bind='a.label'></label></button>
             </div>
         </div>
-        <div class='col-md-4 pull-right'>
+        <div class='col-md-4 pull-right' ng-if='home.isLoggedIn()'>
             Logged in as : <label ng-bind='$sessionStorage.authUser'></label> <button class='btn btn-xs btn-warning' ng-click='home.logout()'>Logout</button>
         </div>
     </div>

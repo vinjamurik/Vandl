@@ -24,9 +24,9 @@
 					<span class='pull-right badge' ng-bind='"Files: "+f.childrenNum'></span>
 				</span>
 				<span ng-if='f.type == "FILE"'>
-					<i class='glyphicon glyphicon-play progress-striped active' ng-click='hdfs.ingest(f)' ng-if='!f.$executing'></i>
+					<i class='glyphicon glyphicon-play' ng-click='hdfs.ingest(f)' ng-if='!f.$executing'></i>
 					<i class='glyphicon glyphicon-refresh fa-spin' ng-if='f.$executing'></i>
-					<i class='glyphicon glyphicon-file list-group-left'></i>
+					<i class='glyphicon glyphicon-remove' ng-click='hdfs.on.deleteFile(f)'></i>
 					<strong ng-bind='f.pathSuffix'></strong>
 					<span class='pull-right badge' ng-bind='f.humanSize'></span>
 				</span>
