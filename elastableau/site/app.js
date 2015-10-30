@@ -1,59 +1,6 @@
-angular.module('elastableau',['ui.bootstrap','ngFileUpload','ngStorage']).config(function($httpProvider){
-  $httpProvider.interceptors.push(function($sessionStorage){
-    return {
-      request:function(config){
-        config.headers.authToken = $sessionStorage.authToken || '';
-        return config;
-      }
-    };
-  });
-}).factory('home',function($http,$sessionStorage,$location){
-  var factory = {};
-  factory.user = {};
-  factory.view = _CONFIG.modules[0].label;
-
-  factory.login = function(){
-    return $http.post(_CONFIG.proxyUrl+'/login',factory.user).then(function(res){
-      $sessionStorage.authToken = res.data;
-      $sessionStorage.authUser = factory.user.username;
-      factory.view = _CONFIG.modules[0].label;
-      angular.copy({},factory.user);
-    });
-  };
-
-  factory.logout = function(){
-    $sessionStorage.$reset();
-    factory.view = _CONFIG.loginModule.label;
-  };
-
-  factory.isLoggedIn = function(){
-    return !!$sessionStorage.authToken;
-  };
-
-  return factory;
-
-}).controller('home',function($scope,$sessionStorage,home,elastic,hdfs){
-  $scope.home = home;
-  $scope._CONFIG = _CONFIG;
-  $scope.$sessionStorage = $sessionStorage;
-
-  $scope.login = function(){
-    home.login().then(function(){
-      $scope.reRoute();  
-    });
-  };
-
-  $scope.reRoute = function(){
-    if(!home.isLoggedIn()){
-      home.view = _CONFIG.loginModule.label;
-    }else{
-      elastic.getIndices();
-      hdfs.on.pathChange();
-    }
-  };
-  $scope.reRoute();
-
-}).factory('elastic',function($http,$sessionStorage){
+angular.module('elastableau',['ui.bootstrap','ngFileUpload'])
+.controller('home',function($scope){$scope._CONFIG = _CONFIG;})
+.factory('elastic',function($http){
 	var factory = {};
   factory.index = '';
   factory.indices = [];
@@ -90,6 +37,7 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload','ngStorage']).config
       });
     });
   };
+  factory.getIndices();
 
   factory.getTypes = function(){
     factory.reset(['type','types','count']);
@@ -149,7 +97,7 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload','ngStorage']).config
 
   factory.extract = function(){
     factory.from = +!factory.random*factory.from;
-    tableau.connectionData = JSON.stringify({index:factory.index,type:factory.type,fields:factory.types[factory.type],from:factory.from,limit:factory.limit,random:factory.random,authToken:$sessionStorage.authToken});
+    tableau.connectionData = JSON.stringify({index:factory.index,type:factory.type,fields:factory.types[factory.type],from:factory.from,limit:factory.limit,random:factory.random});
     tableau.submit();
   };
 
@@ -248,6 +196,7 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload','ngStorage']).config
       });
     }
   };
+  factory.on.pathChange();
 
   factory.upload = function(){
     factory.path+=(factory.endsWith(factory.path) ? '' : '/');

@@ -1,6 +1,8 @@
 (function() {
 
     var versionNumber = "1.1.0";
+    var _sourceWindow;
+
     if (typeof tableauVersionBootstrap === 'undefined') {
         // tableau version bootstrap isn't defined. We are likely running in the simulator so init up our tableau object
         tableau = {
@@ -82,8 +84,18 @@
 
     function _sendMessage(msgName, msgData) {
         var messagePayload = _buildMessagePayload(msgName, msgData);
-
-        window.parent.postMessage(messagePayload, "*");
+        
+        // Check first to see if we have a messageHandler defined to post the message to
+        if (typeof window.webkit != 'undefined' &&
+            typeof window.webkit.messageHandlers != 'undefined' &&
+            typeof window.webkit.messageHandlers.wdcHandler != 'undefined') {
+            
+            window.webkit.messageHandlers.wdcHandler.postMessage(messagePayload);
+        } else if (!_sourceWindow) {
+            throw "Looks like the WDC is calling a tableau function before tableau.init() has been called."
+        } else {
+            _sourceWindow.postMessage(messagePayload, "*");
+        }
     }
 
     function _buildMessagePayload(msgName, msgData) {
@@ -113,12 +125,15 @@
         }
     }
 
-    function _receiveMessage(event) {
+    function _receiveMessage(evnt) {
         var wdc = window._wdc;
         if (!wdc) {
             throw "No WDC registered. Did you forget to call tableau.registerConnector?";
         }
-        var payloadObj = JSON.parse(event.data);
+        if (!_sourceWindow) {
+            _sourceWindow = evnt.source
+        }
+        var payloadObj = JSON.parse(evnt.data);
         var msgData = payloadObj.msgData;
         _applyPropertyValues(payloadObj.props);
 

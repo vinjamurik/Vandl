@@ -8,7 +8,6 @@
     <link rel='stylesheet' href='assets/fa.css'/>
     <link rel='stylesheet' href='app.css'/>
     <script src='assets/angular.min.js'></script>
-    <script src='assets/ngStorage.min.js'></script>
     <script src='assets/ui-bootstrap.min.js'></script>
     <script src='assets/ng-file-upload.min.js'></script>
     <script src='assets/tableau-wdc.js'></script>
@@ -18,17 +17,13 @@
   <body ng-app='elastableau' ng-controller='home'>
     <div class='container-fluid top-bar text-center'>
         <div class='col-md-offset-4 col-md-4'>
-            <div class='btn-group' ng-if='home.view != _CONFIG.loginModule.label'>
-                <button class='btn btn-success' ng-repeat='a in _CONFIG.modules' ng-click='home.view = a.label'><label ng-bind='a.label'></label></button>
+            <div class='btn-group'>
+                <button class='btn btn-success' ng-repeat='a in _CONFIG.modules' ng-click='_CONFIG.view = a.label'><label ng-bind='a.label'></label></button>
             </div>
-        </div>
-        <div class='col-md-4 pull-right' ng-if='home.isLoggedIn()'>
-            Logged in as : <label ng-bind='$sessionStorage.authUser'></label> <button class='btn btn-xs btn-warning' ng-click='home.logout()'>Logout</button>
         </div>
     </div>
     <div class='container-fluid'>
-        <div ng-include='_CONFIG.loginModule.path' ng-if='home.view == _CONFIG.loginModule.label'></div>
-        <div ng-include='a.path' ng-repeat='a in _CONFIG.modules' ng-show='a.label == home.view'></div>
+        <div ng-include='a.path' ng-repeat='a in _CONFIG.modules' ng-show='a.label == _CONFIG.view'></div>
     </div>
   </body>
 </html>

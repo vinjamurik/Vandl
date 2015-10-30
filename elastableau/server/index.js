@@ -1,10 +1,9 @@
-
+var _ = require('underscore');
 var express = require('express');
 var request = require('request');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser')
 var multiparty = require('multiparty');
-var jwt = require('jsonwebtoken');
 var fs = require('fs');
 var Client = require('ssh2').Client;
 var hdfs = require('webhdfs').createClient({user:'webuser',host:'172.31.60.102',port:50070,webhdfs:'/webhdfs/v1'});
@@ -12,13 +11,11 @@ var hdfs = require('webhdfs').createClient({user:'webuser',host:'172.31.60.102',
 var app = express();
 var https = require('https');
 var httpsOpt = {
-  key:fs.readFileSync('ssl/server.key'),
-  cert:fs.readFileSync('ssl/server.crt'),
+  pfx:fs.readFileSync('ssl/server.p12'),
   passphrase:'secret',
   requestCert:true,
   ca:[fs.readFileSync('ssl/ca_sign.crt'),fs.readFileSync('ssl/ca_root.crt')]
 };
-var router = express.Router();
 var port = process.env.PORT || 9001;
 //var url = 'http://172.31.82.218:9200/';
 var url = 'https://localhost:9200/';
@@ -30,11 +27,14 @@ var getElasticBatchSize = function(arg){
 };
 
 var proxyFunction = function(req,res,opt,func){
+  console.log(req.socket.getPeerCertificate(true));
+  _.extend(opt,httpsOpt);
   console.log('Attempting to proxy request to '+opt.url+'?'+JSON.stringify(opt.qs));
   request(opt,function(error,response,body){
+    if(error) console.log(error);
     if(func) body = func(typeof body == 'string' ? JSON.parse(body) : body);
-    res.set('Access-Control-Allow-Origin','*');
-    res.set('Access-Control-Allow-Headers','Content-Type');
+    //res.set('Access-Control-Allow-Origin','*');
+    //res.set('Access-Control-Allow-Headers','Content-Type');
     res.send(body);
   });
 };
@@ -72,7 +72,6 @@ var getHdfsPath = function(req){
 
 app.use(express.static('../site/'));
 app.use(bodyParser.json());
-app.use(router);
 
 /******************************************************************************************************************/
 
@@ -152,29 +151,10 @@ app.get('/proxy/s3/execute',function(req,res){
 
 /******************************************************************************************************************/
 
-app.post(loginPath,function(req,res){
-  var token = jwt.sign(req.body.username,req.body.password,{expiresIn:'20m'});
-  res.send(token);
-});
-
-/******************************************************************************************************************/
-
 var server = https.createServer(httpsOpt,app).listen(port,function(){
   console.log('Express server listening on port ' + server.address().port);
 });
 
 /******************************************************************************************************************/
-
-router.use(function(req,res,next){
-  try{
-    if(req.url !== loginPath){
-      jwt.verify((req.headers.authtoken || req.query.authToken || ''),'secret',{ignoreExpiration:false});
-    }
-    next();
-  }catch(err){
-    console.log(err, req.method);
-    res.redirect(401,'/login');
-  }
-});
 
 module.exports = app;

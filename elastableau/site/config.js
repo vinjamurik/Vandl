@@ -4,10 +4,6 @@ var _CONFIG = {
 	fileSize:{
 		groups:['B','KB','MB','GB','TB']
 	},
-	loginModule:{
-		label:'Login',
-		path:'login.html'
-	},
 	modules:[
 		{
 			label:'Extract',
@@ -25,4 +21,5 @@ var _CONFIG = {
 			path:'visualize.html'
 		}
 	]
-}
+};
+_CONFIG.view = _CONFIG.modules[0].label;
