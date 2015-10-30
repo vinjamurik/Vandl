@@ -1,5 +1,5 @@
 var _CONFIG = {
-	proxyUrl: 'http://localhost:9001/proxy',
+	proxyUrl: 'https://localhost:9001/proxy',
 	ip:'http://172.31.22.52',
 	fileSize:{
 		groups:['B','KB','MB','GB','TB']

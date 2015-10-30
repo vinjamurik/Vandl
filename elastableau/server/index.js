@@ -10,9 +10,18 @@ var Client = require('ssh2').Client;
 var hdfs = require('webhdfs').createClient({user:'webuser',host:'172.31.60.102',port:50070,webhdfs:'/webhdfs/v1'});
 
 var app = express();
+var https = require('https');
+var httpsOpt = {
+  key:fs.readFileSync('ssl/server.key'),
+  cert:fs.readFileSync('ssl/server.crt'),
+  passphrase:'secret',
+  requestCert:true,
+  ca:[fs.readFileSync('ssl/ca_sign.crt'),fs.readFileSync('ssl/ca_root.crt')]
+};
 var router = express.Router();
 var port = process.env.PORT || 9001;
-var url = 'http://172.31.82.218:9200/';
+//var url = 'http://172.31.82.218:9200/';
+var url = 'https://localhost:9200/';
 var hdfsUrl = 'http://172.31.60.102:50070/webhdfs/v1';
 var loginPath = '/proxy/login';
 
@@ -150,7 +159,7 @@ app.post(loginPath,function(req,res){
 
 /******************************************************************************************************************/
 
-var server = app.listen(port,function(){
+var server = https.createServer(httpsOpt,app).listen(port,function(){
   console.log('Express server listening on port ' + server.address().port);
 });
 
