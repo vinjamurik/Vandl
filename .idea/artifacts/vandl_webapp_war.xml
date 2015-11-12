@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="war" name="vandl-webapp:war">
+    <output-path>$PROJECT_DIR$/vandl-webapp/target</output-path>
+    <root id="archive" name="vandl-webapp.war">
+      <element id="artifact" artifact-name="vandl-webapp:war exploded" />
+    </root>
+  </artifact>
+</component>
