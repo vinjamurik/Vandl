@@ -102,6 +102,7 @@
                             <targetPath>WEB-INF/classes</targetPath>
                             <includes>
                                 <include>vandl.properties</include>
+                                <include>elastic.jks</include>
                             </includes>
                         </resource>
                     </webResources>
