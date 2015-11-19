@@ -7,32 +7,46 @@ var multiparty = require('multiparty');
 var fs = require('fs');
 var Client = require('ssh2').Client;
 var hdfs = require('webhdfs').createClient({user:'webuser',host:'172.31.60.102',port:50070,webhdfs:'/webhdfs/v1'});
+var StringDecoder = require('string_decoder').StringDecoder;
+var decoder = new StringDecoder('utf8');
 
 var app = express();
 var https = require('https');
 var httpsOpt = {
-  pfx:fs.readFileSync('ssl/server.p12'),
+  //pfx:fs.readFileSync('ssl/server.p12'),
+  key:fs.readFileSync('ssl/server.key'),
+  cert:fs.readFileSync('ssl/server.crt'),
   passphrase:'secret',
   requestCert:true,
   ca:[fs.readFileSync('ssl/ca_sign.crt'),fs.readFileSync('ssl/ca_root.crt')]
 };
 var port = process.env.PORT || 9001;
-//var url = 'http://172.31.82.218:9200/';
-var url = 'https://localhost:9200/';
+var url = 'http://172.31.82.218:9200/';//innovision
+//var url = 'https://localhost:9200/';//local
 var hdfsUrl = 'http://172.31.60.102:50070/webhdfs/v1';
 var loginPath = '/proxy/login';
+
+var getInternalUser = function(token){
+  var map = {
+    'amehta':'es_admin',
+    'ncarolina':'east_coast_read'
+  };
+  return map[token];
+};
 
 var getElasticBatchSize = function(arg){
   return Math.min(50000,arg);
 };
 
 var proxyFunction = function(req,res,opt,func){
-  console.log(req.socket.getPeerCertificate(true));
-  _.extend(opt,httpsOpt);
+  _.extend(opt,httpsOpt);var token = req.socket.getPeerCertificate();
+  token = token.subject ? token.subject.CN : req.query.cn;
+  opt.auth = {user:getInternalUser(token),pass:'secret'};
   console.log('Attempting to proxy request to '+opt.url+'?'+JSON.stringify(opt.qs));
   request(opt,function(error,response,body){
     if(error) console.log(error);
     if(func) body = func(typeof body == 'string' ? JSON.parse(body) : body);
+    res.set('cn',token);
     //res.set('Access-Control-Allow-Origin','*');
     //res.set('Access-Control-Allow-Headers','Content-Type');
     res.send(body);
@@ -56,7 +70,8 @@ var executeScript = function(script,res){
       });
     });
   }).connect({
-    host: '172.31.60.102',
+    //host: '172.31.60.102',//innovision
+    host: '172.31.62.40',//vserver
     port: 22,
     username: 'mehtaam',
     privateKey: fs.readFileSync('C:/Users/mehtaam/Documents/winscp575/GlobeServer_priv.ppk'),
@@ -115,6 +130,11 @@ app.get('/proxy/hdfs/dirStatus',function(req,res){
   proxyFunction(req,res,options);
 });
 
+app.get('/proxy/hdfs/preview',function(req,res){
+  var options = {url:hdfsUrl+getHdfsPath(req)+'?op=OPEN&length=1000'};
+  proxyFunction(req,res,options);
+});
+
 app.delete('/proxy/hdfs/deleteFile',function(req,res){
   var options = {url:hdfsUrl+getHdfsPath(req)+'?op=DELETE&recursive=false',method:'DELETE'};
   proxyFunction(req,res,options);
@@ -137,8 +157,8 @@ app.post('/proxy/hdfs/upload',function(req,res){
   });
 });
 
-app.get('/proxy/hdfs/execute',function(req,res){
-  var script = 'spark-submit elaspark.jar "'+req.headers.filetype+'" "'+getHdfsPath(req)+'" "'+req.headers.filename.split('.')[0]+'"';
+app.post('/proxy/hdfs/execute',function(req,res){
+  var script = 'spark-submit elaspark.jar "'+req.headers.filetype+'" "'+getHdfsPath(req)+'" "'+req.headers.indexname.split('.')[0]+'" "'+(req.body.headers || '')+'"';
   executeScript(script,res);
 });
 
@@ -150,6 +170,11 @@ app.get('/proxy/s3/execute',function(req,res){
 });
 
 /******************************************************************************************************************/
+
+app.get('/proxy/logout',function(req,res){
+  req.connection.renegotiate({requestCert:true});
+  res.end();
+});
 
 var server = https.createServer(httpsOpt,app).listen(port,function(){
   console.log('Express server listening on port ' + server.address().port);

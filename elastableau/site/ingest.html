@@ -9,7 +9,7 @@
 	</div>
 
 	<div class='container-fluid'>
-		<input class='form-control primary-text-box' type='text' ng-model='hdfs.path' ng-change='hdfs.on.pathChange()' title='HDFS directory'>
+		<input class='form-control text-box-in-group' style='width:75%' type='text' ng-model='hdfs.path' ng-change='hdfs.on.pathChange()' title='HDFS directory'>
 		<button class="btn" ngf-select ng-model="hdfs.uploadFiles" ngf-multiple="true" ngf-change='hdfs.on.fileChange()' ngf-allow-dir='false'>Select Files</button>
 		<button class="btn btn-primary" ng-click='hdfs.upload()' ng-disabled='hdfs.uploadDisabled'>Upload</button>
 	</div>
@@ -24,7 +24,7 @@
 					<span class='pull-right badge' ng-bind='"Files: "+f.childrenNum'></span>
 				</span>
 				<span ng-if='f.type == "FILE"'>
-					<i class='glyphicon glyphicon-play' ng-click='hdfs.ingest(f)' ng-if='!f.$executing'></i>
+					<i class='glyphicon glyphicon-search' ng-click='hdfs.ingest(f,true)' ng-if='!f.$executing' title='Show Contents'></i>
 					<i class='glyphicon glyphicon-refresh fa-spin' ng-if='f.$executing'></i>
 					<i class='glyphicon glyphicon-remove' ng-click='hdfs.on.deleteFile(f)'></i>
 					<strong ng-bind='f.pathSuffix'></strong>
@@ -45,3 +45,19 @@
 		</ul>
 	</div>
 </div>
+
+<script type='text/ng-template' id='ingestModal.html'>
+	<div class="modal-header">
+        <strong>
+        	<input class='form-control text-box-in-group text-center' style='width:95%' ng-model='hdfs.preview.title' placeholder='Enter index name'>
+        </strong>
+        <i class="glyphicon glyphicon-remove pull-right" ng-click="$close()"></i>
+    </div>
+    <div class="modal-body">
+    	<input class='form-control top-bar' ng-model='hdfs.preview.headers' placeholder='(Optional) Override headers' ng-if='hdfs.fileType == "csv"'>
+    	<textarea class='well' ng-bind='hdfs.preview.text' rows='10' style='width:100%;resize:none' readonly></textarea>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-success" type="button" ng-click="hdfs.ingest();$close()" ng-disabled='!hdfs.preview.title'>Ingest</button>
+    </div>
+</script>

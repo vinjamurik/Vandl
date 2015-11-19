@@ -4,9 +4,10 @@ version := "1.0"
 
 scalaVersion := "2.10.5"
 
-libraryDependencies += "org.apache.spark" %% "spark-core" % "1.3.0" % "provided"
-libraryDependencies += "org.apache.spark" % "spark-sql_2.10" % "1.3.0" % "provided"
-libraryDependencies += "org.elasticsearch" % "elasticsearch-spark_2.10" % "2.1.1" intransitive()
+libraryDependencies += "org.apache.spark" % "spark-core_2.10" % "1.5.1" % "provided"
+libraryDependencies += "org.apache.spark" % "spark-sql_2.10" % "1.5.1" % "provided"
+libraryDependencies += "org.elasticsearch" % "elasticsearch-spark_2.10" % "2.1.2" intransitive()
+libraryDependencies += "com.joestelmach" % "natty" % "0.12"
 
 val meta = """META.INF(.)*""".r
 assemblyMergeStrategy in assembly := {

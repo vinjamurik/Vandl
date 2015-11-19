@@ -1,11 +1,21 @@
 angular.module('elastableau',['ui.bootstrap','ngFileUpload'])
-.controller('home',function($scope){$scope._CONFIG = _CONFIG;})
-.factory('elastic',function($http){
+.controller('home',function($scope,$http,elastic){
+  $scope._CONFIG = _CONFIG;
+
+  $scope.logout = function(){
+    $http.get(_CONFIG.proxyUrl+'/logout').then(function(res){
+      elastic.reset();
+      elastic.getIndices();
+    });
+  };
+
+}).factory('elastic',function($http){
 	var factory = {};
   factory.index = '';
   factory.indices = [];
   factory.type = '';
-  factory.types = {};
+  factory.types = [];
+  factory.headers = {};
   factory.from = 0;
   factory.limit = 0;
   factory.random = false;
@@ -13,8 +23,11 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload'])
   factory.data = [];
   factory.count = 0;
   factory.connector = tableau.makeConnector();
+  factory.cn = '';
+  factory.$refreshingIndices = false;
 
   factory.reset = function(args){
+    args = args || ['types','type','index','indices','count','headers','data'];
     angular.forEach(args,function(arg){
       switch(typeof factory[arg]){
         case 'object':
@@ -31,34 +44,30 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload'])
   
   factory.getIndices = function(){
     factory.reset(['index','indices']);
+    factory.$refreshingIndices = true;
     $http.get(factory.url+'indices').then(function(res){
       angular.forEach(angular.extend({'':{}},res.data),function(v,k){
         factory.indices.push(k);
       });
+      factory.$refreshingIndices = false;
+      if(res.headers('cn')) _CONFIG.cn = res.headers('cn');
     });
   };
   factory.getIndices();
 
   factory.getTypes = function(){
-    factory.reset(['type','types','count']);
+    factory.reset(['type','types','count','headers']);
     if(factory.index){
       return $http.get(factory.url+'types',{params:{index:factory.index}}).then(function(res){
-        angular.forEach(angular.extend({'':{}},res.data[factory.index].mappings),function(typeVal,type){
-          factory.types[type] = [];
-          angular.forEach(typeVal.properties,function(obj,key){
-            factory.types[type].push({name:key,type:obj.type});
-          });
+        angular.forEach(res.data[factory.index].mappings,function(typeVal,type){
+          factory.types.push(type)
         });
       });
     }
   };
 
   factory.connector.getColumnHeaders = function(){
-    var headers = {names:[],types:[]};
-    angular.forEach(JSON.parse(tableau.connectionData).fields,function(field){
-      headers.names.push(field.name);
-      headers.types.push(field.type);
-    });
+    var headers = JSON.parse(tableau.connectionData).headers;
     tableau.headersCallback(headers.names,headers.types);
   };
 
@@ -76,9 +85,7 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload'])
       if(params.limit > 0){
         from = +from+data.length;
       }else{
-        if(!from){
-          moreRecords = true;
-        }
+        if(!from) moreRecords = true;
         from = res.data._scroll_id;
       }
       tableau.dataCallback(data,from,moreRecords);
@@ -91,19 +98,27 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload'])
       $http.get(factory.url+'preview',{params:{index:factory.index,type:factory.type}}).then(function(res){
         factory.count = res.data.hits.total;
         factory.data = res.data.hits.hits;
+        if(factory.count){
+          var item = factory.data[0]._source; factory.headers.names = Object.keys(item); factory.headers.types = [];
+          angular.forEach(factory.headers.names,function(h){
+            factory.headers.types.push(typeof item[h])
+          });
+        }
       });
     }
   };
 
   factory.extract = function(){
     factory.from = +!factory.random*factory.from;
-    tableau.connectionData = JSON.stringify({index:factory.index,type:factory.type,fields:factory.types[factory.type],from:factory.from,limit:factory.limit,random:factory.random});
+    var params = {index:factory.index,type:factory.type,headers:factory.headers,from:factory.from,limit:factory.limit,random:factory.random};
+    if(_CONFIG.cn) params.cn = _CONFIG.cn;
+    tableau.connectionData = JSON.stringify(params);
     tableau.submit();
   };
 
   factory.delete = function(){
-    $http.delete(factory.url+'delete',{params:{index:factory.index,type:factory.type}}).then(function(res){
-      factory.reset(['type','types']);
+    $http.delete(factory.url+'delete',{params:{index:factory.index}}).then(function(res){
+      factory.reset();
       factory.getIndices();
     });
   };
@@ -115,7 +130,7 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload'])
 
 }).controller('extract',function($scope,elastic){
 	$scope.elastic = elastic;
-}).factory('hdfs',function(Upload,$http){
+}).factory('hdfs',function(Upload,$http,$uibModal){
   var factory = {};
   factory.url = _CONFIG.proxyUrl+'/hdfs/';
   factory.dirFiles = [];
@@ -124,6 +139,7 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload'])
   factory.currentFolder = '';
   factory.fileType = '';
   factory.uploadDisabled = true;
+  factory.preview = {text:'',headers:'',item:{},title:''};
 
   factory.getHumanizedSize = function(size,dPlaces){
     var g = 0;
@@ -212,11 +228,30 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload'])
     });
   };
 
-  factory.ingest = function(item){
-    item.$executing = true;
-    $http.get(factory.url+'execute',{headers:{path:factory.path,filetype:factory.fileType,filename:item.pathSuffix}}).then(function(res){
-      item.$executing = false;
-    });
+  factory.ingest = function(item,manual){
+    item = item || factory.preview.item;
+    if(manual){
+      factory.preview(item).then(function(res){
+        $uibModal.open({
+          animation: true,
+          templateUrl: 'ingestModal.html',
+          controller: 'ingest',
+          size:'lg'
+        });
+        factory.preview.text = res.data;
+        factory.preview.item = item;
+        factory.preview.title = item.pathSuffix.match(/(.+)\./)[1];
+      });
+    }else{
+      item.$executing = true;
+      $http.post(factory.url+'execute',{headers:factory.preview.headers},{headers:{path:factory.path,filetype:factory.fileType,filename:item.pathSuffix,indexName:factory.preview.title}}).then(function(res){
+        item.$executing = false;
+      });
+    }
+  };
+
+  factory.preview = function(item){
+    return $http.get(factory.url+'preview',{headers:{path:factory.path,filetype:factory.fileType,filename:item.pathSuffix}});
   };
 
   return factory;
@@ -247,6 +282,7 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload'])
 }).controller('ingest',function($scope,hdfs,s3){
   $scope.hdfs = hdfs;
   $scope.s3 = s3;
+
 }).factory('visualize',function(){
   var factory = {};
   factory.images = [

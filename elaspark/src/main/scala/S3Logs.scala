@@ -1,30 +1,29 @@
 object S3Logs {
-	import org.elasticsearch.spark._
 	import org.apache.spark.SparkContext
-  import org.apache.spark.SparkContext._
+  import org.elasticsearch.spark.rdd.EsSpark
   import org.apache.spark.SparkConf
 
 	var sc:SparkContext = null
 
   case class S3Log(
-     val bucketOwner:String= "",
-     val bucket:String = "",
-     val time:String = "",
-     val remoteIp:String = "",
-     val requester:String = "",
-     val requestId:String = "",
-     val operation:String = "",
-     val key:String = "",
-     val requestUri:String = "",
-     val httpStatus:String = "",
-     val errorCode:String = "",
-     val bytesSent:String = "",
-     val objectSize:String = "",
-     val totalTime:String= "",
-     val turnAroundTime:String = "",
-     val referrer:String = "",
-     val userAgent:String = "",
-     val versionId:String = ""
+     bucketOwner:String= "",
+     bucket:String = "",
+     time:String = "",
+     remoteIp:String = "",
+     requester:String = "",
+     requestId:String = "",
+     operation:String = "",
+     key:String = "",
+     requestUri:String = "",
+     httpStatus:String = "",
+     errorCode:String = "",
+     bytesSent:String = "",
+     objectSize:String = "",
+     totalTime:String= "",
+     turnAroundTime:String = "",
+     referrer:String = "",
+     userAgent:String = "",
+     versionId:String = ""
   )
 
   def getLogObjectFrom(logLine:String) = {
@@ -44,6 +43,6 @@ object S3Logs {
   }
 
   def exec() = {
-  	sc.textFile(s"s3n://x-globe-logs/content-logs/*").map((x:String) => getLogObjectFrom(x)).saveToEs("xid_s3_logs/default")
+  	EsSpark.saveToEs(sc.textFile(s"s3n://x-globe-logs/content-logs/*").map((x:String) => getLogObjectFrom(x)),"xid_s3_logs/default")
   }
 }

@@ -1,9 +1,10 @@
 <div ng-controller='extract'>
   <div class='top-bar text-center'>
+    <i class='glyphicon glyphicon-refresh' ng-click='elastic.getIndices()' ng-class='{"fa-spin":elastic.$refreshingIndices}' title='Refresh Data'></i>
     Indices
     <select class='form-control mid-width' ng-model='elastic.index' ng-options='i as i for i in elastic.indices | orderBy' ng-change='elastic.getTypes()'></select>
     Types
-    <select class='form-control mid-width' ng-model='elastic.type' ng-options='k as k for (k,v) in elastic.types' ng-change='elastic.preview()'></select>
+    <select class='form-control mid-width' ng-model='elastic.type' ng-options='k as k for k in elastic.types' ng-change='elastic.preview()'></select>
     <span ng-if='!elastic.random && elastic.limit'>
       From: <input class='form-control small-width' type='number' ng-model='elastic.from'>
     </span>
@@ -17,18 +18,18 @@
   
   <div ng-show='elastic.index' class='top-bar text-center'>
     <strong ng-bind='"Total Records: "+elastic.count'></strong>
-    <button ng-click='elastic.extract()' ng-show='elastic.type' class='btn btn-xs btn-success'>Extract</button>
+    <button ng-click='elastic.extract()' ng-show='elastic.type' class='btn btn-xs btn-success' ng-disabled='!elastic.count'>Extract</button>
     <button ng-click='elastic.delete()' class='btn btn-xs btn-danger'>Delete</button>
   </div>
 
   <div>
     <table class='table table-striped'>
       <thead>
-        <th ng-repeat='t in elastic.types[elastic.type]' ng-bind='t.name'></th>
+        <th ng-repeat='t in elastic.headers.names' ng-bind='t'></th>
       </thead>
       <tbody>
         <tr ng-repeat='p in elastic.data'>
-          <td ng-repeat='t in elastic.types[elastic.type]' ng-bind='p._source[t.name]'></td>
+          <td ng-repeat='t in elastic.headers.names' ng-bind='p._source[t]'></td>
         </tr>
       </tbody>
     </table>

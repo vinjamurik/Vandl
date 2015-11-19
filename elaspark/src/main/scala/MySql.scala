@@ -1,9 +1,8 @@
 object MySql {
 	import org.apache.spark.SparkConf
   import org.apache.spark.SparkContext
-  import org.apache.spark.SparkContext._
   import org.apache.spark.rdd.RDD
-  import org.elasticsearch.spark._
+  import org.elasticsearch.spark.rdd.EsSpark
 
   var sc:SparkContext = null
   var tableMap = Map[String,List[String]]()
@@ -36,7 +35,7 @@ object MySql {
 
   def elasticSave(kv:(String,List[String])) = {
     val regex = "'?(((.*?)'?,)|(,'?(.*?)'?,)|(,'?(.*?)))".r
-    mainRdd.filter(isInsertLine(_,kv._1)).flatMap(splitInsertIntoPieces(_)).map((x:String) => kv._2.zip(regex.findAllMatchIn(x).map(_.group(3)).toSeq).toMap).saveToEs(s"xid_${kv._1}/default")
+    EsSpark.saveToEs(mainRdd.filter(isInsertLine(_,kv._1)).flatMap(splitInsertIntoPieces(_)).map((x:String) => kv._2.zip(regex.findAllMatchIn(x).map(_.group(3)).toSeq).toMap),s"xid_${kv._1}/default")
   }
 
   def init(conf:SparkConf) = {

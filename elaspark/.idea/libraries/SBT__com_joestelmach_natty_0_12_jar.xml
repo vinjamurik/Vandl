@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="SBT: com.joestelmach:natty:0.12:jar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/com.joestelmach/natty/jars/natty-0.12.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

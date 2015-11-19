@@ -1,42 +1,43 @@
 object AgolLogs {
-	import org.elasticsearch.spark._
 	import org.apache.spark.SparkContext
-  import org.apache.spark.SparkContext._
   import org.apache.spark.SparkConf
   import java.util.Date
   import java.text.SimpleDateFormat
+  import org.elasticsearch.spark.rdd.EsSpark
+  import com.joestelmach.natty._
+  import scala.collection.JavaConversions._
 
 	var sc:SparkContext = null
 
   case class ElasticLog(
-     val timestamp:Date = new Date(0),
-     val loadBalanceName:String = "-",
-     val clientIP:String = "-",
-     val serverIP:String = "-",
-     val clientProcessingTime:Double = -1,
-     val serverProcessingTime:Double = -1,
-     val responseProcessingTime:Double = -1,
-     val loadBalancerStatusCode:String = "-",
-     val serverStatusCode:String = "-",
-     val bytesReceived:Long = 0,
-     val bytesSent:Long = 0,
-     val requestMethod:String = "-",
-     val requestURL:String = "-",
-     val requestProtocol:String = "-",
-     val userAgent:String = "-",
-     val sslCipher:String = "-",
-     val sslProtocol:String = "-",
-     val regionName:String = "-",
-     val productName:String = "-"
+     timestamp:Date = new Date(0),
+     loadBalanceName:String = "-",
+     clientIP:String = "-",
+     serverIP:String = "-",
+     clientProcessingTime:Double = -1,
+     serverProcessingTime:Double = -1,
+     responseProcessingTime:Double = -1,
+     loadBalancerStatusCode:String = "-",
+     serverStatusCode:String = "-",
+     bytesReceived:Long = 0,
+     bytesSent:Long = 0,
+     requestMethod:String = "-",
+     requestURL:String = "-",
+     requestProtocol:String = "-",
+     userAgent:String = "-",
+     sslCipher:String = "-",
+     sslProtocol:String = "-",
+     regionName:String = "-",
+     productName:String = "-"
   )
 
   def getLogObjectFrom(logLine:String) = {
     try{
       val m  = """^(\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) "(\S+) (\S+) (\S+\s?)" "(.*)" (\S+) (\S+)""".r.findFirstMatchIn(logLine).get
       val m_sub = """/rest/services/([A-z_]+)/([A-z_]+)/""".r.findFirstMatchIn(m.group(13))
-      val m_timestamp = "([\\d-]+?)T([\\d:]+?)\\.".r.findFirstMatchIn(m.group(1))
+      //val m_timestamp = "([\\d-]+?)T([\\d:]+?)\\.".r.findFirstMatchIn(m.group(1))
       ElasticLog(
-        new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(m_timestamp.get.group(1)+" "+m_timestamp.get.group(2)),
+        new Parser().parse(m.group(1)).get(0).getDates.get(0),
         m.group(2),
         m.group(3),
         m.group(4),
@@ -76,6 +77,6 @@ object AgolLogs {
   }
 
   def exec() = {
-  	sc.textFile(s"s3n://x-globe-logs/elb/*/*/*/*/*/*/*").map((x:String) => getLogObjectFrom(x)).saveToEs("xid_elb_logs/default")
+  	EsSpark.saveToEs(sc.textFile(s"s3n://x-globe-logs/elb/*/*/*/*/*/*/*").map((x:String) => getLogObjectFrom(x)),"xid_agol_logs/default")
   }
 }
