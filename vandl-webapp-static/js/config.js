@@ -1,6 +1,5 @@
 var _CONFIG = {
-	proxyUrl: 'https://localhost:9001/proxy',
-	ip:'http://172.31.22.52',
+	url: 'http://localhost:8080/vandl-webapp/',
 	fileSize:{
 		groups:['B','KB','MB','GB','TB']
 	},

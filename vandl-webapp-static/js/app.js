@@ -19,7 +19,7 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload'])
   factory.from = 0;
   factory.limit = 0;
   factory.random = false;
-  factory.url = _CONFIG.proxyUrl+'/elastic/';
+  factory.url = _CONFIG.url+'elastic';
   factory.data = [];
   factory.count = 0;
   factory.connector = tableau.makeConnector();
@@ -44,13 +44,10 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload'])
   
   factory.getIndices = function(){
     factory.reset(['index','indices']);
-    factory.$refreshingIndices = true;
-    $http.get(factory.url+'indices').then(function(res){
+    $http.get(factory.url).then(function(res){
       angular.forEach(angular.extend({'':{}},res.data),function(v,k){
         factory.indices.push(k);
       });
-      factory.$refreshingIndices = false;
-      if(res.headers('cn')) _CONFIG.cn = res.headers('cn');
     });
   };
   factory.getIndices();
@@ -58,7 +55,7 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload'])
   factory.getTypes = function(){
     factory.reset(['type','types','count','headers']);
     if(factory.index){
-      return $http.get(factory.url+'types',{params:{index:factory.index}}).then(function(res){
+      return $http.get(factory.url+'/'+factory.index,{params:{index:factory.index}}).then(function(res){
         angular.forEach(res.data[factory.index].mappings,function(typeVal,type){
           factory.types.push(type)
         });

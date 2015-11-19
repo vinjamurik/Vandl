@@ -15,14 +15,16 @@ public final class ApplicationServletContextListener implements javax.servlet.Se
 
     public void contextInitialized(ServletContextEvent servletContextEvent){
         Configurator.setServletContext(servletContextEvent.getServletContext());
-        /*String keyPath = Configurator.getServletContext().getRealPath("/WEB-INF/classes/truststore.jks");
-        SSLContext sslContext = SslConfigurator.newInstance().trustStoreFile(keyPath).trustStorePassword("secret").trustStoreType("JKS").createSSLContext();
-        Configurator.setClient(ClientBuilder.newBuilder().sslContext(sslContext).build());*/
-        Configurator.setClient(ClientBuilder.newClient().register(HttpAuthenticationFeature.basic("es_admin","secret")));
         try {
             InputStream is = getClass().getClassLoader().getResourceAsStream("vandl.properties");
             Configurator.setProperties(is);
             is.close();
+
+            String kpath = Configurator.getProperties().getProperty("vandlKeyStoreFile");
+            String kpass = Configurator.getProperties().getProperty("vandlKeyStorePassword");
+
+            SSLContext sslContext = SslConfigurator.newInstance().keyStoreFile(kpath).keyPassword(kpass).trustStoreFile(kpath).trustStorePassword(kpass).createSSLContext();
+            Configurator.setClient( ClientBuilder.newBuilder().sslContext(sslContext).build().register(HttpAuthenticationFeature.basic("es_admin","secret")) );
         }catch(IOException e){
             e.printStackTrace();
         }
