@@ -9,7 +9,7 @@ import javax.ws.rs.core.Response;
 import java.util.Arrays;
 
 @Path("/elastic")
-public class ElasticResource {
+public final class ElasticResource {
     private static final String URL = Configurator.getProperties().getProperty("elasticAddress");
     private static final Integer BATCH_SIZE = Integer.parseInt(Configurator.getProperties().getProperty("elasticBatchSize"));
     private static final Integer SCROLL_SIZE = Integer.parseInt(Configurator.getProperties().getProperty("elasticScrollSize"));
