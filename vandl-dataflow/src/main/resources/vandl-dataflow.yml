@@ -1,0 +1,3 @@
+name: Arjun Mehta
+inputFileLocation: vandl-dataflow/src/main/resources/sample.csv
+kafkaTopic: test

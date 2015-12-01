@@ -23,6 +23,7 @@
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
         <module name="vandl-common" />
+        <module name="vandl-dataflow" />
         <module name="vandl-domain" />
         <module name="vandl-services" />
         <module name="vandl-services-impl" />
@@ -31,6 +32,7 @@
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="vandl-common" target="1.5" />
+      <module name="vandl-dataflow" target="1.5" />
       <module name="vandl-domain" target="1.5" />
       <module name="vandl-services" target="1.5" />
       <module name="vandl-services-impl" target="1.5" />

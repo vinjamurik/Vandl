@@ -15,6 +15,7 @@
         <module>vandl-services</module>
         <module>vandl-common</module>
         <module>vandl-services-impl</module>
+        <module>vandl-dataflow</module>
     </modules>
 
     <repositories>
@@ -63,6 +64,22 @@
             <artifactId>javaee-api</artifactId>
             <version>${javax-version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.esotericsoftware.yamlbeans</groupId>
+            <artifactId>yamlbeans</artifactId>
+            <version>${yaml-beans-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>${csv-reader-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka_2.11</artifactId>
+            <version>${kafka-version}</version>
+        </dependency>
+
     </dependencies>
 
     <properties>
@@ -70,6 +87,9 @@
         <spring-version>4.2.2.RELEASE</spring-version>
         <slf4j-version>1.7.13</slf4j-version>
         <javax-version>7.0</javax-version>
+        <yaml-beans-version>1.09</yaml-beans-version>
+        <csv-reader-version>1.2</csv-reader-version>
+        <kafka-version>0.8.2.0</kafka-version>
     </properties>
 
 
