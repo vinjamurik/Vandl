@@ -1,3 +1,2 @@
-name: Arjun Mehta
-inputFileLocation: vandl-dataflow/src/main/resources/sample.csv
-kafkaTopic: test
+kafkaConsumerLocation: kafka-consumer.properties
+kafkaProducerLocation: kafka-producer.properties
