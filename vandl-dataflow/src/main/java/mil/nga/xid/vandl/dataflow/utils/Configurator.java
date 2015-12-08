@@ -9,6 +9,8 @@ import java.util.Properties;
 public final class Configurator {
     private static Map<String,Object> config;
 
+    private Configurator(){}
+
     public static void init() throws IOException{
         YamlReader yr = new YamlReader(new InputStreamReader(Configurator.class.getClassLoader().getResourceAsStream("vandl-dataflow.yml")));
         config = (Map)yr.read();

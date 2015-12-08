@@ -9,9 +9,11 @@ import java.io.FileReader;
 import java.io.IOException;
 
 public final class CSVService {
+
+    private CSVService(){}
+
     public static CSVParser readFromFile(String fileLocation,String[] headers) throws IOException{
         File f = new File(fileLocation);
-        System.out.println(f.getAbsolutePath());
         if(!f.exists()){
             throw new FileNotFoundException("File does not exist");
         }
