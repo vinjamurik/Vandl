@@ -1,4 +1,4 @@
-package mil.nga.xid.vandl.controllers;
+package mil.nga.xid.vandl.resources;
 
 import mil.nga.xid.vandl.utils.Configurator;
 

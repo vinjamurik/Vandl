@@ -16,16 +16,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.esotericsoftware.yamlbeans</groupId>
-            <artifactId>yamlbeans</artifactId>
-            <version>${yaml-beans-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-csv</artifactId>
-            <version>${csv-reader-version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
             <version>${kafka-version}</version>
@@ -63,7 +53,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>mil.nga.xid.vandl.dataflow.Driver</mainClass>
+                            <mainClass>mil.nga.xid.vandl.dataflow.DataflowEngine</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

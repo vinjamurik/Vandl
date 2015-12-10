@@ -1,6 +1,6 @@
 package mil.nga.xid.vandl.utils;
 
-import mil.nga.xid.vandl.dataflow.controllers.KafkaService;
+import mil.nga.xid.vandl.dataflow.DataflowService;
 import org.glassfish.jersey.SslConfigurator;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 
@@ -28,7 +28,7 @@ public final class ApplicationServletContextListener implements javax.servlet.Se
             Configurator.setClient( ClientBuilder.newBuilder().sslContext(sslContext).build().register(HttpAuthenticationFeature.basic("es_admin","secret")) );
 
             mil.nga.xid.vandl.dataflow.utils.Configurator.init();
-            KafkaService.init();
+            DataflowService.init();
         }catch(IOException e){
             e.printStackTrace();
         }

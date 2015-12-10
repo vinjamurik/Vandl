@@ -1,3 +1,0 @@
-kafkaConsumerLocation: kafka-consumer.properties
-kafkaProducerLocation: kafka-producer.properties
-kafkaDefaultPollTime: 1000

@@ -10,7 +10,7 @@
                             http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd">
 
     <!-- Scan for REST endpoints -->
-    <context:component-scan base-package="mil.nga.xid.vandl.controllers"/>
+    <context:component-scan base-package="mil.nga.xid.vandl.resources"/>
 
     <!-- Using annotation based Spring bean definitions -->
     <context:annotation-config />
