@@ -14,7 +14,7 @@
     <util:properties id="consumer" location="resources/consumer.properties"></util:properties>
     <util:properties id="producer" location="resources/producer.properties"></util:properties>
 
-    <bean id="kafkaService" class="mil.nga.xid.vandl.dataflow.DataflowService">
+    <bean id="kafkaService" class="mil.nga.xid.vandl.webapp.dataflow.DataflowService">
         <property name="consumer" ref="consumer"></property>
         <property name="producer" ref="producer"></property>
     </bean>

@@ -53,7 +53,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>mil.nga.xid.vandl.dataflow.DataflowEngine</mainClass>
+                            <mainClass>mil.nga.xid.vandl.webapp.dataflow.DataflowEngine</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
