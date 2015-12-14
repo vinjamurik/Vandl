@@ -9,40 +9,74 @@
 	</div>
 
 	<div class='container-fluid'>
-		<input class='form-control text-box-in-group' style='width:75%' type='text' ng-model='hdfs.path' ng-change='hdfs.on.pathChange()' title='HDFS directory'>
-		<button class="btn" ngf-select ng-model="hdfs.uploadFiles" ngf-multiple="true" ngf-change='hdfs.on.fileChange()' ngf-allow-dir='false'>Select Files</button>
-		<button class="btn btn-primary" ng-click='hdfs.upload()' ng-disabled='hdfs.uploadDisabled'>Upload</button>
+		<div class='col-md-6'>
+			<input class='form-control text-box-in-group' style='width:75%' type='text' ng-model='hdfs.path' ng-change='hdfs.on.pathChange()' title='HDFS directory'>
+			<button class="btn" ngf-select ng-model="hdfs.uploadFiles" ngf-multiple="true" ngf-change='hdfs.on.fileChange()' ngf-allow-dir='false'>Select Files</button>
+			<button class="btn btn-primary" ng-click='hdfs.upload()' ng-disabled='hdfs.uploadDisabled'>Upload</button>
+		</div>
+		<div class='col-md-6 top-bar'>
+			<input class='form-control text-box-in-group' style='width:89%' type='text' ng-model='streaming.topic' title='Topic'>
+			<button class='btn' ng-click='streaming.addTopic()' ng-disabled='!streaming.topic'>Add Topic</button>
+		</div>
 	</div>
 
 	<div class='col-md-6'>
-		<h3 class='text-center'>Files in directory <i class='glyphicon glyphicon-arrow-up' ng-click='hdfs.getOutOfFolder()' ng-if='hdfs.currentFolder'></i> </h3>
-		<ul class='list-group'>
-			<li class='list-group-item' ng-repeat='f in hdfs.dirFiles'>
-				<span ng-if='f.type == "DIRECTORY"' ng-click='hdfs.goIntoFolder(f)'>
-					<i class='glyphicon glyphicon-folder-open list-group-left'></i>
-					<strong ng-bind='f.pathSuffix'></strong>
-					<span class='pull-right badge' ng-bind='"Files: "+f.childrenNum'></span>
-				</span>
-				<span ng-if='f.type == "FILE"'>
-					<i class='glyphicon glyphicon-search' ng-click='hdfs.ingest(f,true)' ng-if='!f.$executing' title='Show Contents'></i>
-					<i class='glyphicon glyphicon-refresh fa-spin' ng-if='f.$executing'></i>
-					<i class='glyphicon glyphicon-remove' ng-click='hdfs.on.deleteFile(f)'></i>
-					<strong ng-bind='f.pathSuffix'></strong>
-					<span class='pull-right badge' ng-bind='f.humanSize'></span>
-				</span>
-			</li>
-		</ul>
+		<div class='col-md-6'>
+			<h3 class='text-center'>Files in directory <i class='glyphicon glyphicon-arrow-up' ng-click='hdfs.getOutOfFolder()' ng-if='hdfs.currentFolder'></i> </h3>
+			<ul class='list-group'>
+				<li class='list-group-item' ng-repeat='f in hdfs.dirFiles'>
+					<span ng-if='f.type == "DIRECTORY"' ng-click='hdfs.goIntoFolder(f)'>
+						<i class='glyphicon glyphicon-folder-open list-group-left'></i>
+						<strong ng-bind='f.pathSuffix'></strong>
+						<span class='pull-right badge' ng-bind='"Files: "+f.childrenNum'></span>
+					</span>
+					<span ng-if='f.type == "FILE"'>
+						<i class='glyphicon glyphicon-search' ng-click='hdfs.ingest(f,true)' ng-if='!f.$executing' title='Show Contents'></i>
+						<i class='glyphicon glyphicon-refresh fa-spin' ng-if='f.$executing'></i>
+						<i class='glyphicon glyphicon-remove' ng-click='hdfs.on.deleteFile(f)'></i>
+						<strong ng-bind='f.pathSuffix'></strong>
+						<span class='pull-right badge' ng-bind='f.humanSize'></span>
+					</span>
+				</li>
+			</ul>
+		</div>
+		<div class='col-md-6'>
+			<h3 class='text-center'>Files to Upload</h3>
+			<ul class='list-group'>
+				<li class='list-group-item' ng-repeat='f in hdfs.uploadFiles'>
+					<button class='glyphicon glyphicon-remove btn btn-xs btn-danger list-group-left' ng-click='hdfs.on.removeItem($index)'></button>
+					<strong>Filename: </strong><span ng-bind='f.name'></span>
+					<span class='badge' ng-bind='f.humanSize'></span>
+				</li>
+			</ul>
+		</div>
 	</div>
 
 	<div class='col-md-6'>
-		<h3 class='text-center'>Files to Upload</h3>
-		<ul class='list-group'>
-			<li class='list-group-item' ng-repeat='f in hdfs.uploadFiles'>
-				<button class='glyphicon glyphicon-remove btn btn-xs btn-danger list-group-left' ng-click='hdfs.on.removeItem($index)'></button>
-				<strong>Filename: </strong><span ng-bind='f.name'></span>
-				<span class='badge' ng-bind='f.humanSize'></span>
-			</li>
-		</ul>
+		<uib-accordion close-others="oneAtATime">
+		    <uib-accordion-group ng-repeat='t in streaming.topics'>
+		    	<uib-accordion-heading>
+		    		<i ng-bind='t.name+" --- "+t.data.length+" records"'></i>
+		    		<btn class='btn btn-xs glyphicon glyphicon-remove btn-danger pull-right' ng-click='streaming.removeTopic($index)'></btn>
+		    	</uib-accordion-heading>
+		    	<div class='row'>
+		    		<input type='text' class='form-control text-box-in-group' style='width:94%' ng-model='t.message'>
+		    		<button class='btn btn-xs' ng-click='streaming.send(t)'>Send</button>
+		    	</div>
+		    	<div class='row'>
+		    		<input type='number' class='form-control text-box-in-group' style='width:95%' ng-model='t.time' min='0'>
+		    		<button class='btn btn-xs' ng-click='streaming.poll(t)'>Poll</button>
+		    	</div>
+		    	<div class='row'>
+		    		<ul>
+		    			<li ng-bind='td.message' ng-repeat='td in t.data'></li>
+		    		</ul>
+		    	</div>
+		    	<div class='row'>
+		    		<center ng-bind='t.data.length+" records"'></center>
+		    	</div>
+		    </uib-accordion-group>
+		</uib-accordion>
 	</div>
 </div>
 

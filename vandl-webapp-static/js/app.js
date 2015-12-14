@@ -1,33 +1,10 @@
 angular.module('elastableau',['ui.bootstrap','ngFileUpload'])
-.controller('home',function($scope,$http,elastic){
-  $scope._CONFIG = _CONFIG;
+.run(function($rootScope){
+  
+  $rootScope._CONFIG = _CONFIG;
 
-  $scope.logout = function(){
-    $http.get(_CONFIG.proxyUrl+'/logout').then(function(res){
-      elastic.reset();
-      elastic.getIndices();
-    });
-  };
-
-}).factory('elastic',function($http){
-	var factory = {};
-  factory.index = '';
-  factory.indices = [];
-  factory.type = '';
-  factory.types = [];
-  factory.headers = {};
-  factory.from = 0;
-  factory.limit = 0;
-  factory.random = false;
-  factory.url = _CONFIG.url+'elastic';
-  factory.data = [];
-  factory.count = 0;
-  factory.connector = tableau.makeConnector();
-  factory.cn = '';
-  factory.$refreshingIndices = false;
-
-  factory.reset = function(args){
-    args = args || ['types','type','index','indices','count','headers','data'];
+  $rootScope.reset = function(factory,args){
+    args = args || factory.resetArgs;
     angular.forEach(args,function(arg){
       switch(typeof factory[arg]){
         case 'object':
@@ -36,100 +13,114 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload'])
         case 'string':
           factory[arg] = '';
           break;
-        default:
+        case 'number':
           factory[arg] = 0;
+          break;
+        default:
+          break;
       }
     });
   };
+
+}).factory('ElasticFactory',function($http,$rootScope){
+
+  tableau.connectionName = 'Elastableau';
+	
+  var factory = {
+    url:_CONFIG.url+'elastic/',index:'',indices:[],type:'',types:[],data:[],headerNames:[],headerTypes:[],from:0,finish:0,count:0,random:false,connector:tableau.makeConnector(),
+    resetArgs:['indices','types','data','headerNames','headerTypes','index','type'],connectionArgs:['index','type','from','finish','random','headerNames','headerTypes']
+  };
   
   factory.getIndices = function(){
-    factory.reset(['index','indices']);
-    $http.get(factory.url).then(function(res){
-      angular.forEach(angular.extend({'':{}},res.data),function(v,k){
+    $rootScope.reset(factory);
+    return $http.get(factory.url).then(function(res){
+      angular.forEach(angular.extend(res.data),function(v,k){
         factory.indices.push(k);
       });
+      return res;
     });
   };
   factory.getIndices();
 
   factory.getTypes = function(){
-    factory.reset(['type','types','count','headers']);
-    if(factory.index){
-      return $http.get(factory.url+'/'+factory.index,{params:{index:factory.index}}).then(function(res){
-        angular.forEach(res.data[factory.index].mappings,function(typeVal,type){
-          factory.types.push(type)
-        });
+    $rootScope.reset(factory,['type','types','count','headerNames','headerTypes','data']);
+    return $http.get(factory.url+factory.index).then(function(res){
+      angular.forEach(res.data[factory.index].mappings,function(v,k){
+        factory.types.push(k)
       });
-    }
-  };
-
-  factory.connector.getColumnHeaders = function(){
-    var headers = JSON.parse(tableau.connectionData).headers;
-    tableau.headersCallback(headers.names,headers.types);
-  };
-
-  factory.connector.getTableData = function(from){
-    var params = JSON.parse(tableau.connectionData);
-    from = from || params.from;
-    delete params.fields;
-    params.from = from;
-    $http.get(factory.url+'data',{params:params}).then(function(res){
-      var data = [];
-      angular.forEach(res.data.hits.hits,function(hit){
-        data.push(hit._source);
-      });
-      var moreRecords = data.length > 0;
-      if(params.limit > 0){
-        from = +from+data.length;
-      }else{
-        if(!from) moreRecords = true;
-        from = res.data._scroll_id;
-      }
-      tableau.dataCallback(data,from,moreRecords);
+      return res;
     });
   };
 
-  factory.preview = function(){
-    factory.reset(['count','data']);
-    if(factory.type){
-      $http.get(factory.url+'preview',{params:{index:factory.index,type:factory.type}}).then(function(res){
-        factory.count = res.data.hits.total;
-        factory.data = res.data.hits.hits;
-        if(factory.count){
-          var item = factory.data[0]._source; factory.headers.names = Object.keys(item); factory.headers.types = [];
-          angular.forEach(factory.headers.names,function(h){
-            factory.headers.types.push(typeof item[h])
-          });
-        }
+  factory.generateColumnHeaders = function(){
+    $rootScope.reset(factory,['headerNames','headerTypes']);
+    if(factory.data.length){
+      angular.forEach(factory.data[0],function(v,k){
+        factory.headerNames.push(k);
+        factory.headerTypes.push(typeof v);
       });
     }
   };
 
+  factory.preview = function(){
+    $rootScope.reset(factory,['count','data']);
+    return $http.get(factory.url+factory.index+'/'+factory.type).then(function(res){
+      factory.count = res.data.hits.total;
+      angular.forEach(res.data.hits.hits,function(hit){
+        factory.data.push(hit._source);
+      });
+      factory.generateColumnHeaders();
+      return res;
+    });
+  };
+
   factory.extract = function(){
-    factory.from = +!factory.random*factory.from;
-    var params = {index:factory.index,type:factory.type,headers:factory.headers,from:factory.from,limit:factory.limit,random:factory.random};
-    if(_CONFIG.cn) params.cn = _CONFIG.cn;
-    tableau.connectionData = JSON.stringify(params);
+    var c = {};
+    angular.forEach(factory.connectionArgs,function(arg){
+      c[arg] = factory[arg];
+    });
+    c._scroll_id = (c.from === 0 && c.finish === 0) ? '-' : undefined;
+    tableau.connectionData = JSON.stringify(c);
+    $rootScope.reset(factory);
     tableau.submit();
   };
 
   factory.delete = function(){
-    $http.delete(factory.url+'delete',{params:{index:factory.index}}).then(function(res){
-      factory.reset();
+    $http.delete(factory.url+factory.index).then(function(res){
       factory.getIndices();
     });
   };
 
-  tableau.connectionName = 'Elastableau';
+  factory.connector.getColumnHeaders = function(){
+    var c = JSON.parse(tableau.connectionData);
+    tableau.headersCallback(c.headerNames,c.headerTypes);
+  };
+
+  factory.connector.getTableData = function(from){
+    var c = JSON.parse(tableau.connectionData), data = [], url = factory.url+c.index+'/'+c.type+'/'+(c._scroll_id || c.from+'/'+c.finish+'/'+c.random);
+    $http.get(url).then(function(res){
+      angular.forEach(res.data.hits.hits,function(hit){
+        data.push(hit._source);
+      });
+      c.from += data.length;
+      c._scroll_id = res.data._scroll_id || c._scroll_id;
+      c.finish = c.finish || res.data.hits.total;
+      tableau.connectionData = JSON.stringify(c);
+      tableau.dataCallback(data, c.from, c.from < c.finish && (c._scroll_id || !c.random));
+    });
+  };
+
   tableau.registerConnector(factory.connector);
 
   return factory;
 
-}).controller('extract',function($scope,elastic){
-	$scope.elastic = elastic;
+}).controller('ElasticController',function($scope,ElasticFactory){
+
+	$scope.ef = ElasticFactory;
+
 }).factory('hdfs',function(Upload,$http,$uibModal){
   var factory = {};
-  factory.url = _CONFIG.proxyUrl+'/hdfs/';
+  factory.url = _CONFIG.url+'/hdfs/';
   factory.dirFiles = [];
   factory.uploadFiles = [];
   factory.path = '/';
@@ -209,7 +200,7 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload'])
       });
     }
   };
-  factory.on.pathChange();
+  //factory.on.pathChange();
 
   factory.upload = function(){
     factory.path+=(factory.endsWith(factory.path) ? '' : '/');
@@ -276,35 +267,67 @@ angular.module('elastableau',['ui.bootstrap','ngFileUpload'])
 
   return factory;
 
-}).controller('ingest',function($scope,hdfs,s3){
+}).factory('streaming',function($http,$interval,$rootScope){
+  var factory = {};
+  factory.url = _CONFIG.url+'streaming';
+  factory.topic = '';
+  factory.topics = [];
+
+  factory.addTopic = function(){
+    factory.topics.push({name:factory.topic,data:[],time:0});
+    $rootScope.reset(factory,['topic']);
+  };
+
+  factory.removeTopic = function(index){
+    factory.topics.splice(index,1);
+  };
+
+  factory.poll = function(t){
+    return $http.get(factory.url+'/'+t.name+'/'+t.time).then(function(res){
+      angular.copy(res.data,t.data);
+    });
+    return res;
+  };
+
+  factory.send = function(t){
+    return $http.post(factory.url+'/'+t.name,t.message).then(function(res){
+      t.message = '';
+      return res;
+    });
+  };
+
+  return factory;
+
+}).controller('ingest',function($scope,hdfs,s3,streaming){
   $scope.hdfs = hdfs;
   $scope.s3 = s3;
+  $scope.streaming = streaming;
 
 }).factory('visualize',function(){
   var factory = {};
   factory.images = [
     {
-      img:'img/kibana.png',
+      img:'assets/img/kibana.png',
       href:'http://172.31.84.221:5601'
     },
     {
-      img:'img/plotly.png',
+      img:'assets/img/plotly.png',
       href:''
     },
     {
-      img:'img/tableau.png',
+      img:'assets/img/tableau.png',
       href:'http://172.31.9.66'
     },
     {
-      img:'img/bokeh.png',
+      img:'assets/img/bokeh.png',
       href:'http://172.31.48.155'
     },
     {
-      img:'img/rshiny.png',
+      img:'assets/img/rshiny.png',
       href:''
     },
     {
-      img:'img/paxata.png',
+      img:'assets/img/paxata.png',
       href:'https://pri-poc.paxata.com'
     }
   ];

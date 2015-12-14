@@ -1,5 +1,5 @@
 var _CONFIG = {
-	url: 'http://localhost:8080/vandl-webapp/',
+	url: 'https://localhost:8443/vandl-webapp/',
 	fileSize:{
 		groups:['B','KB','MB','GB','TB']
 	},
@@ -7,17 +7,17 @@ var _CONFIG = {
 		{
 			label:'Extract',
 			href:'#/extract',
-			path:'extract.html'
+			path:'html/extract.html'
 		},
 		{
 			label:'Ingest',
 			href:'#/ingest',
-			path:'ingest.html'
+			path:'html/ingest.html'
 		},
 		{
 			label:'Visualize',
 			href:'#/visualize',
-			path:'visualize.html'
+			path:'html/visualize.html'
 		}
 	]
 };

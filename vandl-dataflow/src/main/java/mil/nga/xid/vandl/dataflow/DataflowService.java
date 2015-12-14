@@ -1,4 +1,4 @@
-package mil.nga.xid.vandl.webapp.dataflow;
+package mil.nga.xid.vandl.dataflow;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -55,7 +55,7 @@ public class DataflowService {
         return recs;
     }
 
-    public static Scanner readFromFile(String fileLocation) throws IOException {
+    public Scanner readFromFile(String fileLocation) throws IOException {
         File f = new File(fileLocation);
         if(!f.exists()){
             throw new FileNotFoundException("File does not exist");

@@ -1,7 +1,8 @@
-package mil.nga.xid.vandl.webapp.dataflow;
+package mil.nga.xid.vandl.dataflow;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import java.io.FileWriter;
@@ -14,7 +15,13 @@ public final class DataflowEngine {
     private static DataflowService dataflowService;
 
     public static void main(String[] args) throws IOException,IndexOutOfBoundsException,InterruptedException{
-        ApplicationContext ctx = new FileSystemXmlApplicationContext("resources/vandl-spring-context.xml");
+        ApplicationContext ctx;
+        try {
+            ctx = new FileSystemXmlApplicationContext("resources/vandl-dataflow.xml");
+        }catch(Exception e){
+            System.out.println("Could not find external spring context, defaulting to internal");
+            ctx = new ClassPathXmlApplicationContext("vandl-dataflow.xml");
+        }
         dataflowService = ctx.getBean("dataflowService",DataflowService.class);
 
         switch(dataflowService.getDataflow().getProperty("source")){
@@ -39,7 +46,7 @@ public final class DataflowEngine {
             case "stream":
                 switch (dataflowService.getDataflow().getProperty("sink")){
                     case "file":
-                        streamToFile(dataflowService.getDataflow().getProperty("path"),dataflowService.getDataflow().getProperty("topic"));
+                        streamToFile(dataflowService.getDataflow().getProperty("path"),Integer.parseInt(dataflowService.getDataflow().getProperty("time")),dataflowService.getDataflow().getProperty("topic"));
                         break;
                     default:
                         break;
@@ -51,14 +58,14 @@ public final class DataflowEngine {
     }
 
     private static void fileToStream(String path, String topic) throws IOException{
-        Scanner s = DataflowService.readFromFile(path);//local file location
+        Scanner s = dataflowService.readFromFile(path);//local file location
         while(s.hasNextLine()){
             dataflowService.sendMessage(topic,s.nextLine());//topic name
         }
         s.close();
     }
 
-    public static void directoryToStream(String path,String topic) throws IOException,InterruptedException{
+    private static void directoryToStream(String path,String topic) throws IOException,InterruptedException{
         Path dir = Paths.get(path), absDir = dir.toAbsolutePath();
         WatchService watcher = dir.getFileSystem().newWatchService();
         dir.register(watcher, StandardWatchEventKinds.ENTRY_CREATE);
@@ -70,9 +77,9 @@ public final class DataflowEngine {
         }
     }
 
-    public static void streamToFile(String path, String... topic) throws IOException{
+    private static void streamToFile(String path, Integer time, String... topic) throws IOException{
         Writer fw = new FileWriter(path);
-        for(ConsumerRecord r : dataflowService.pollTopics(1000,topic)){
+        for(ConsumerRecord r : dataflowService.pollTopics(time,topic)){
             fw.append(r.value().toString()+"\n");
         }
         fw.close();
