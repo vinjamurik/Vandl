@@ -19,7 +19,7 @@ public class HttpsRequestFactory extends HttpComponentsClientHttpRequestFactory 
     public HttpsRequestFactory(String path, String pass) throws Exception{
         super();
         BasicCredentialsProvider bc = new BasicCredentialsProvider();
-        bc.setCredentials(AuthScope.ANY,new UsernamePasswordCredentials("es_admin","secret"));
+        bc.setCredentials(AuthScope.ANY,new UsernamePasswordCredentials("es_admin","Pa$$word99"));
         setHttpClient(HttpClientBuilder.create()
                 .setSSLContext(buildSSLContext(path,pass))
                 .setDefaultCredentialsProvider(bc)
