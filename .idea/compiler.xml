@@ -28,9 +28,17 @@
         <module name="vandl-services-impl" />
         <module name="vandl-webapp" />
       </profile>
+      <profile default="false" name="Annotation profile for vandl-dataflow" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="vandl-dataflow" />
+      </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="vandl-common" target="1.5" />
+      <module name="vandl-dataflow" target="1.8" />
       <module name="vandl-domain" target="1.5" />
       <module name="vandl-services" target="1.5" />
       <module name="vandl-services-impl" target="1.5" />

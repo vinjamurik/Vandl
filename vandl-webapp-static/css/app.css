@@ -1,0 +1,25 @@
+.mid-width {
+	width: 22%;
+	display: inline;
+}
+
+.small-width {
+	width: 15%;
+	display: inline;
+}
+
+.text-box-in-group {
+	display: inline;
+}
+
+.list-group-left {
+	margin-right: 5px;
+}
+
+span[ng-click],i[ng-click] {
+	cursor: pointer;
+}
+
+.top-bar {
+	margin-bottom: 10px;
+}

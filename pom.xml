@@ -15,25 +15,11 @@
         <module>vandl-services</module>
         <module>vandl-common</module>
         <module>vandl-services-impl</module>
+        <module>vandl-dataflow</module>
     </modules>
 
 
     <dependencies>
-        <dependency>
-            <groupId>org.glassfish.jersey.core</groupId>
-            <artifactId>jersey-client</artifactId>
-            <version>${jersey-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jersey.connectors</groupId>
-            <artifactId>jersey-apache-connector</artifactId>
-            <version>${jersey-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jersey.ext</groupId>
-            <artifactId>jersey-spring3</artifactId>
-            <version>${jersey-version}</version>
-        </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
@@ -44,19 +30,19 @@
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j-version}</version>
         </dependency>
-        <dependency>
-            <groupId>javax</groupId>
-            <artifactId>javaee-api</artifactId>
-            <version>${javax-version}</version>
-        </dependency>
     </dependencies>
 
     <properties>
         <jersey-version>2.22.1</jersey-version>
-        <spring-version>4.2.2.RELEASE</spring-version>
+        <spring-version>4.2.3.RELEASE</spring-version>
         <slf4j-version>1.7.13</slf4j-version>
         <javax-version>7.0</javax-version>
+        <yaml-beans-version>1.09</yaml-beans-version>
+        <csv-reader-version>1.2</csv-reader-version>
+        <kafka-version>0.9.0.0</kafka-version>
+        <avro-version>1.7.7</avro-version>
+        <hdfs-version>2.7.1</hdfs-version>
+        <gson-version>2.5</gson-version>
+        <http-client-version>4.5.1</http-client-version>
     </properties>
-
-
 </project>
