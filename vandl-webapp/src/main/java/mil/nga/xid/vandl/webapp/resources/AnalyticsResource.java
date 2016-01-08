@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
 @Controller
-@RequestMapping(value = "/elastic", produces = MediaType.APPLICATION_JSON_VALUE)
-public final class ElasticResource {
+@RequestMapping(value = "/analytics", produces = MediaType.APPLICATION_JSON_VALUE)
+public final class AnalyticsResource {
     @Value("#{restTemplate}")
     private RestTemplate restTemplate;
     @Value("#{webappProperties.elasticBatchSize}")

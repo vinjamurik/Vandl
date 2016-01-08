@@ -20,10 +20,7 @@ public class HttpsRequestFactory extends HttpComponentsClientHttpRequestFactory 
         super();
         BasicCredentialsProvider bc = new BasicCredentialsProvider();
         bc.setCredentials(AuthScope.ANY,new UsernamePasswordCredentials("es_admin","secret"));
-        setHttpClient(HttpClientBuilder.create()
-                .setSSLContext(buildSSLContext(path,pass))
-                .setDefaultCredentialsProvider(bc)
-                .build());
+        setHttpClient(HttpClientBuilder.create().setSSLContext(buildSSLContext(path,pass)).setDefaultCredentialsProvider(bc).build());
     }
 
     private SSLContext buildSSLContext(String path, String pass) throws Exception{

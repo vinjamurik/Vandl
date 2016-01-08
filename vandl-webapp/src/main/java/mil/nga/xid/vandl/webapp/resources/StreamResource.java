@@ -9,8 +9,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
-@RequestMapping(value = "/streaming", produces = MediaType.APPLICATION_JSON_VALUE)
-public final class KafkaResource {
+@RequestMapping(value = "/stream", produces = MediaType.APPLICATION_JSON_VALUE)
+public final class StreamResource {
     @Value("#{dataflowService}")
     private DataflowService dataflowService;
 

@@ -15,9 +15,19 @@
     <util:properties id="producer" location="resources/producer.properties"></util:properties>
     <util:properties id="dataflow" location="resources/dataflow.properties"></util:properties>
 
+    <bean id="basicAWSCredentials" class="com.amazonaws.auth.BasicAWSCredentials">
+        <constructor-arg value="AKIAJUFNNYKM4OFFQLBQ"></constructor-arg>
+        <constructor-arg value="E4mSOkZ41XJyXp+OJBir4IkFXcu7zM4MUKCXLvH5"></constructor-arg>
+    </bean>
+
+    <bean id="amazonS3Client" class="com.amazonaws.services.s3.AmazonS3Client">
+        <constructor-arg value="#{basicAWSCredentials}" type="com.amazonaws.auth.AWSCredentials"></constructor-arg>
+    </bean>
+
     <bean id="dataflowService" class="mil.nga.xid.vandl.dataflow.DataflowService">
         <property name="consumer" ref="consumer"></property>
         <property name="producer" ref="producer"></property>
         <property name="dataflow" ref="dataflow"></property>
+        <property name="amazonS3Client" ref="amazonS3Client"></property>
     </bean>
 </beans>

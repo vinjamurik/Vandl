@@ -1,5 +1,6 @@
 package mil.nga.xid.vandl.dataflow;
 
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -24,7 +25,14 @@ public final class DataflowEngine {
         }
         dataflowService = ctx.getBean("dataflowService",DataflowService.class);
 
-        switch(dataflowService.getDataflow().getProperty("source")){
+        //test code
+        /*for(S3ObjectSummary s : dataflowService.getAmazonS3Client().listObjects("x-globe-pagetag").getObjectSummaries()){
+            System.out.println(s.getKey()+" -- "+s.getSize());
+        }*/
+        System.out.println(dataflowService.getAmazonS3Client().listBuckets());
+        //end test code
+
+        /*switch(dataflowService.getDataflow().getProperty("source")){
             case "file":
                 switch (dataflowService.getDataflow().getProperty("sink")){
                     case "stream":
@@ -54,7 +62,7 @@ public final class DataflowEngine {
                 break;
             default:
                 break;
-        }
+        }*/
     }
 
     private static void fileToStream(String path, String topic) throws IOException{

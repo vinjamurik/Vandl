@@ -1,5 +1,6 @@
 package mil.nga.xid.vandl.dataflow;
 
+import com.amazonaws.services.s3.AmazonS3Client;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -16,6 +17,8 @@ import java.util.Scanner;
 
 public class DataflowService {
     private Properties producer,consumer,dataflow;
+
+    private AmazonS3Client amazonS3Client;
 
     public Properties getProducer() {
         return producer;
@@ -39,6 +42,14 @@ public class DataflowService {
 
     public void setDataflow(Properties dataflow) {
         this.dataflow = dataflow;
+    }
+
+    public AmazonS3Client getAmazonS3Client() {
+        return amazonS3Client;
+    }
+
+    public void setAmazonS3Client(AmazonS3Client amazonS3Client) {
+        this.amazonS3Client = amazonS3Client;
     }
 
     public void sendMessage(String topic, String message){

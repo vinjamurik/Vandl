@@ -22,7 +22,7 @@
     <dependencies>
         <dependency>
             <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
+            <artifactId>spring-webmvc</artifactId>
             <version>${spring-version}</version>
         </dependency>
         <dependency>
@@ -44,5 +44,6 @@
         <hdfs-version>2.7.1</hdfs-version>
         <gson-version>2.5</gson-version>
         <http-client-version>4.5.1</http-client-version>
+        <aws-version>1.10.43</aws-version>
     </properties>
 </project>
