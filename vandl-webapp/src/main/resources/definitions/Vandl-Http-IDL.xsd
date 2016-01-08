@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="http://nga.mil.xid/Vandl/Rest/Http/"
+        elementFormDefault="qualified" xmlns="http://www.w3.org/2001/XMLSchema"
+        xmlns:tns="http://nga.mil.xid/Vandl/Rest/Http/"
+        xmlns:base="http://nga.mil.xid/Vandl/Rest/Common/">
+
+    <import schemaLocation="Vandl-Common-IDL.xsd"
+            namespace="http://nga.mil.xid/Vandl/Rest/Common/"></import>
+
+    <annotation>
+        <documentation>
+            The Vandl HTTP IDL defines the inbound messages and
+            their responses originating from an HTTP client to the
+            Vandl Rest Service.
+        </documentation>
+        <appinfo>
+            <schemaBindings>
+                <package name="nga.mil.xid.vandl.rest.http"/>
+            </schemaBindings>
+        </appinfo>
+    </annotation>
+
+</schema>
+

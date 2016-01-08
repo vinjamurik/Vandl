@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="http://nga.mil.xid/Vandl/Rest/Common/"
+        elementFormDefault="qualified" xmlns="http://www.w3.org/2001/XMLSchema"
+        xmlns:tns="http://nga.mil.xid/Vandl/Rest/Common/">
+
+    <annotation>
+        <documentation>
+            Items such as
+            Identifiers, Primitives, and objects which reside in both sets of objects will
+            be defined here.
+        </documentation>
+        <appinfo>
+            <schemaBindings>
+                <package name="mil.nga.xid.vandl.rest.common"/>
+            </schemaBindings>
+        </appinfo>
+    </annotation>
+
+    <simpleType name="Identifier">
+        <annotation>
+            <documentation>
+                Default identifier which can be used for all objects which need a String id field.
+            </documentation>
+        </annotation>
+        <restriction base="string">
+            <maxLength value="1024"/>
+            <pattern value="[^\s]+"/>
+        </restriction>
+    </simpleType>
+
+    <simpleType name="NumericIdentifier">
+        <annotation>
+            <documentation>
+                Default identifier which can be used for all objects which need a Long id field.
+            </documentation>
+        </annotation>
+        <restriction base="long" />
+    </simpleType>
+
+    <simpleType name="ReturnCode">
+        <annotation>
+            <documentation>
+                A Return Code can be one of two values, either Success or Error and can be used to
+                signify the success or failure of a rest/amqp call or other operations.
+            </documentation>
+        </annotation>
+        <restriction base="string">
+            <enumeration value="SUCCESS"/>
+            <enumeration value="ERROR"/>
+        </restriction>
+    </simpleType>
+
+    <simpleType name="GridAction">
+        <restriction base="string">
+            <enumeration value="NEW"/>
+            <enumeration value="EDIT"/>
+            <enumeration value="DELETE"/>
+        </restriction>
+    </simpleType>
+
+    <simpleType name="Justification">
+        <restriction base="string">
+            <enumeration value="LEFT"/>
+            <enumeration value="CENTER"/>
+            <enumeration value="RIGHT"/>
+        </restriction>
+    </simpleType>
+
+    <simpleType name="CrudType">
+        <restriction base="string">
+            <enumeration value="ACTION_CREATE"/>
+            <enumeration value="ACTION_READ" />
+            <enumeration value="ACTION_UPDATE" />
+            <enumeration value="ACTION_DELETE" />
+            <enumeration value="ACTION_DEFAULT" />
+        </restriction>
+    </simpleType>
+
+    <simpleType name="QueueType">
+        <restriction base="string">
+            <enumeration value="QUEUE"/>
+            <enumeration value="TOPIC"/>
+        </restriction>
+    </simpleType>
+
+    <simpleType name="ValidationCode">
+        <restriction base="string">
+            <enumeration value="VALID"/>
+            <enumeration value="INVALID"/>
+        </restriction>
+    </simpleType>
+
+    <complexType name="Header">
+        <annotation>
+            <documentation>
+                Default Header object which will contain pertinent information for who sent/receives
+                requests/responses.
+            </documentation>
+        </annotation>
+        <sequence>
+            <element name="deviceAddress" type="tns:Identifier"/>
+            <element name="provider" type="tns:Identifier"/>
+            <element name="userId" type="tns:Identifier" minOccurs="0" maxOccurs="1"/>
+            <element name="timestamp" type="dateTime"/>
+        </sequence>
+    </complexType>
+
+</schema>
+

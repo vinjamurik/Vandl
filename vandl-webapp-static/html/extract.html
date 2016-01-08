@@ -1,0 +1,37 @@
+<div ng-controller='ElasticController'>
+  <div class='top-bar text-center'>
+    <i class='glyphicon glyphicon-refresh' ng-click='ef.getIndices()' ng-class='{"fa-spin":ef.$refreshingIndices}' title='Refresh Data'></i>
+    Indices
+    <select class='form-control mid-width' ng-model='ef.index' ng-options='i as i for i in ef.indices | orderBy' ng-change='ef.getTypes()'></select>
+    Types
+    <select class='form-control mid-width' ng-model='ef.type' ng-options='k as k for k in ef.types' ng-change='ef.preview()'></select>
+    <span ng-if='!ef.random && ef.finish'>
+      From: <input class='form-control small-width' type='number' ng-model='ef.from' min='0'>
+    </span>
+    <span>
+      Finish: <input class='form-control small-width' type='number' ng-model='ef.finish' min='0'>
+    </span>
+    <span ng-show='ef.finish > 0'>
+      <input type='checkbox' ng-model='ef.random'> Random
+    </span>
+  </div>
+  
+  <div ng-show='ef.index' class='top-bar text-center'>
+    <strong ng-bind='"Total Records: "+ef.count'></strong>
+    <button ng-click='ef.extract()' ng-show='ef.type' class='btn btn-xs btn-success' ng-disabled='!ef.count'>Extract</button>
+    <button ng-click='ef.delete()' class='btn btn-xs btn-danger'>Delete</button>
+  </div>
+
+  <div>
+    <table class='table table-striped'>
+      <thead>
+        <th ng-repeat='t in ef.headerNames' ng-bind='t'></th>
+      </thead>
+      <tbody>
+        <tr ng-repeat='p in ef.data'>
+          <td ng-repeat='t in ef.headerNames' ng-bind='p[t]'></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

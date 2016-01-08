@@ -1,0 +1,76 @@
+<div ng-controller='ingest'>
+
+	<div class='container-fluid'>
+		<div class='col-md-6'>
+			<button class="btn" ngf-select='lake.upload($file)' ng-disabled='!lake.bucket'>Upload</button>
+			<select class='form-control text-box-in-group' style='width:40%' ng-model='lake.bucket' ng-options='b as b for b in lake.buckets' ng-change='lake.getObjects()'></select>
+			<input class='form-control text-box-in-group' style='width:51%' ng-model='lake.prefix' ng-change='lake.getObjects()'>
+		</div>
+		<div class='col-md-6'>
+			<select class='form-control text-box-in-group' style='width:20%' ng-model='streaming.topic' ng-options='t as t for t in streaming.topics'></select>
+			<input class='form-control text-box-in-group' style='width:20%' ng-model='streaming.topic'>
+			<input class='form-control text-box-in-group' style='width:20%' ng-model='streaming.message'>
+			<button class="btn btn-xs glyphicon glyphicon-plus" ng-click='streaming.send()' ng-disabled='!streaming.message || !streaming.topic'></button>
+			<input class='form-control text-box-in-group' style='width:16%' type='number' min='1000' ng-model='streaming.time'>
+			<button class="btn btn-xs glyphicon glyphicon-search" ng-click='streaming.poll()' ng-disabled='!streaming.topic || !streaming.time'></button>
+		</div>
+	</div>
+
+	<div class='container-fluid'>
+		<div class='col-md-6'>
+			<ul class='list-group'>
+				<li class='list-group-item' ng-repeat='o in lake.objects' ng-bind='o'></li>
+			</ul>
+		</div>
+		<div class='col-md-6'>
+			<ul class='list-group'>
+				<li class='list-group-item' ng-repeat='o in streaming.messages' ng-bind='o.message'></li>
+			</ul>
+		</div>
+	</div>
+
+	<!-- <div class='container-fluid'>
+		<div class='col-md-6'>
+			<uib-accordion close-others="oneAtATime">
+			    <uib-accordion-group ng-repeat='t in streaming.topics'>
+			    	<uib-accordion-heading>
+			    		<i ng-bind='t.name+" --- "+t.data.length+" records"'></i>
+			    		<btn class='btn btn-xs glyphicon glyphicon-remove btn-danger pull-right' ng-click='streaming.removeTopic($index)'></btn>
+			    	</uib-accordion-heading>
+			    	<div class='row'>
+			    		<input type='text' class='form-control text-box-in-group' style='width:94%' ng-model='t.message'>
+			    		<button class='btn btn-xs' ng-click='streaming.send(t)'>Send</button>
+			    	</div>
+			    	<div class='row'>
+			    		<input type='number' class='form-control text-box-in-group' style='width:95%' ng-model='t.time' min='0'>
+			    		<button class='btn btn-xs' ng-click='streaming.poll(t)'>Poll</button>
+			    	</div>
+			    	<div class='row'>
+			    		<ul>
+			    			<li ng-bind='td.message' ng-repeat='td in t.data'></li>
+			    		</ul>
+			    	</div>
+			    	<div class='row'>
+			    		<center ng-bind='t.data.length+" records"'></center>
+			    	</div>
+			    </uib-accordion-group>
+			</uib-accordion>
+		</div>
+	</div> -->
+</div>
+
+<script type='text/ng-template' id='ingestModal.html'>
+	<div class="modal-header">
+        <strong>
+        	<input class='form-control text-box-in-group text-center' style='width:95%' ng-model='lake.preview.title' placeholder='Enter index name'>
+        </strong>
+        <i class="glyphicon glyphicon-remove pull-right" ng-click="$close()"></i>
+    </div>
+    <div class="modal-body">
+    	<input class='form-control top-bar' ng-model='lake.preview.headers' placeholder='(Optional) Override headers' ng-if='lake.fileType == "csv"'>
+    	<textarea class='well' ng-bind='lake.preview.text' rows='10' style='width:100%;resize:none' readonly></textarea>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-success" type="button" ng-click="lake.ingest();$close()" ng-disabled='!lake.preview.title'>Ingest</button>
+    </div>
+</script>
