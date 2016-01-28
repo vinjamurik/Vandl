@@ -1,1 +1,4 @@
-/*/target/
+/vandl/*/target/
+/vandl/vandl-spark/target/
+/vandl/vandl-spark/*/target
+/vandl/vandl-spark/*/*/target
